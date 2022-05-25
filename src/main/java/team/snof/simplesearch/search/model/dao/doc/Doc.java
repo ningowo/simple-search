@@ -6,6 +6,8 @@ import lombok.Data;
 @Data
 public class Doc {
 
+    public Long SnowflakeDocId;
+
     public String url;
 
     public String caption;
