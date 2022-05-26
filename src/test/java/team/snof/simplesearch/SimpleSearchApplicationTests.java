@@ -1,6 +1,6 @@
 package team.snof.simplesearch;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +12,7 @@ import team.snof.simplesearch.search.service.DocService;
 import java.util.List;
 
 @SpringBootTest
+@Slf4j
 class SimpleSearchApplicationTests {
     @Autowired
     DocMapper docMapper;
@@ -21,11 +22,8 @@ class SimpleSearchApplicationTests {
     DocPaser docPaser;
 
     @Test
-    public void mapperTest() {
-        List<Doc> docs = docMapper.selectList(new QueryWrapper<>());
-        for (Doc doc : docs) {
-            System.out.println(doc);
-        }
+    void contextLoads() {
+        log.info("添加注解之后直接在方法里用就行");
     }
 
     @Test
