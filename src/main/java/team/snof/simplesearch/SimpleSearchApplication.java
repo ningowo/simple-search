@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SimpleSearchApplication {
 
     public static void main(String[] args) {
+        //
         SpringApplication.run(SimpleSearchApplication.class, args);
     }
 
