@@ -1,13 +1,14 @@
 package team.snof.simplesearch.search.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.search.infra.redis.Holder;
-import team.snof.simplesearch.search.infra.redis.RedisPoolExecutor;
 import team.snof.simplesearch.search.model.vo.SearchListResponseVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -16,14 +17,22 @@ public class SearchService {
     @Autowired
     WordSegmentation wordSegmentation;
 
+    // spring容器没启动的时候会爆红，没办法。直接用就行
     @Autowired
-    RedisPoolExecutor redisPool;
+    private RedisTemplate redisTemplate;
 
     public SearchListResponseVO search(SearchRequestVO request) {
 
         // 查缓存是否有分页结果
-        // 举个例子
-        findDocsInJedis("key", 0, 10);
+        // 接口以参考这个 https://blog.csdn.net/AlbenXie/article/details/109348114
+        // list批量添加
+        ArrayList<String> list = new ArrayList<>();
+        redisTemplate.boundListOps("listKey").rightPushAll(list);
+        // list范围查询
+        List listKey1 = redisTemplate.boundListOps("listKey").range(0, 10);
+        // 获取List缓存的长度
+        Long size = redisTemplate.boundListOps("listKey").size();
+
 
         // 分词
 
@@ -38,15 +47,18 @@ public class SearchService {
         return new SearchListResponseVO();
     }
 
-    private List<String> findDocsInJedis(String key, long start, long stop) {
+    public String test() {
 
-        Holder<List<String>> holder = new Holder<>();
-        redisPool.execute(redis -> {
-            // 具体看api https://www.runoob.com/redis/redis-lists.html
-            List<String> list = redis.lrange(key, start, stop);
-            holder.value(list);
-        });
+        String key = "key1";
+        List<String> value = new ArrayList<>();
+        value.add("1");
+        value.add("2");
+        value.add("3");
+        redisTemplate.opsForList().rightPushAll(key, value);
 
-        return holder.value();
+        Long size = redisTemplate.opsForList().size(key);
+
+        return "Result: " + size;
     }
+
 }
