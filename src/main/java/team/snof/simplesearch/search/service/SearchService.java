@@ -2,10 +2,9 @@ package team.snof.simplesearch.search.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.search.infra.JedisPoolSingleton;
+import team.snof.simplesearch.search.infra.redis.Holder;
+import team.snof.simplesearch.search.infra.redis.RedisPoolExecutor;
 import team.snof.simplesearch.search.model.vo.SearchListResponseVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 
@@ -17,13 +16,14 @@ public class SearchService {
     @Autowired
     WordSegmentation wordSegmentation;
 
-    JedisPool jedisPool = JedisPoolSingleton.getJedisPool();
+    @Autowired
+    RedisPoolExecutor redisPool;
 
     public SearchListResponseVO search(SearchRequestVO request) {
 
         // 查缓存是否有分页结果
         // 举个例子
-        findDocInJedis();
+        findDocsInJedis("key", 0, 10);
 
         // 分词
 
@@ -38,15 +38,15 @@ public class SearchService {
         return new SearchListResponseVO();
     }
 
-    private List findDocInJedis() {
-        List<String> list;
-        // 缓存使用记得用try-with-resource！ 用完自动 close
-        try (Jedis jedis = jedisPool.getResource()) {
-            // 具体看api https://www.runoob.com/redis/redis-lists.html
-            jedis.llen("query");
-            list = jedis.lrange("key", 0, 10);
-        }
+    private List<String> findDocsInJedis(String key, long start, long stop) {
 
-        return list;
+        Holder<List<String>> holder = new Holder<>();
+        redisPool.execute(redis -> {
+            // 具体看api https://www.runoob.com/redis/redis-lists.html
+            List<String> list = redis.lrange(key, start, stop);
+            holder.value(list);
+        });
+
+        return holder.value();
     }
 }
