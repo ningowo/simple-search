@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.model.dao.index;
+package team.snof.simplesearch.search.model.dao;
 
 import lombok.Builder;
 

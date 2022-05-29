@@ -1,6 +1,6 @@
 package team.snof.simplesearch.common.util;
 
-import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.Doc;
 
 import java.util.ArrayList;
 import java.util.List;

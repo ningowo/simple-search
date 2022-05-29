@@ -1,12 +1,11 @@
 package team.snof.simplesearch.search.engine;
 
 import lombok.extern.slf4j.Slf4j;
-import team.snof.simplesearch.search.model.dao.index.Index;
-import team.snof.simplesearch.search.model.dao.index.IndexPartial;
+import team.snof.simplesearch.search.model.dao.Index;
+import team.snof.simplesearch.search.model.dao.IndexPartial;
 
 @Slf4j
 public class IndexStorage {
-
     public void saveIndex(Index index) {
         try {
             // 调用云存储或者本地存储

@@ -1,8 +1,7 @@
 package team.snof.simplesearch.search.engine;
 
 import lombok.extern.slf4j.Slf4j;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
-import team.snof.simplesearch.search.model.dao.index.Index;
+import team.snof.simplesearch.search.model.dao.Doc;
 
 @Slf4j
 public class DocStorage {
