@@ -3,8 +3,10 @@ package team.snof.simplesearch.search.model.dao.doc;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class Doc {
+public class Doc implements Serializable {
 
     public Long SnowflakeDocId;
 

@@ -25,8 +25,8 @@ public class DocParser {
     IndexStorage indexStorage;
     @Autowired
     DocStorage docStorage;
-    @Autowired
-    SnowflakeIdGenerator snowflakeIdGenerator;
+//    @Autowired
+//    SnowflakeIdGenerator snowflakeIdGenerator;
 
 
     private ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 5, 30,
@@ -58,7 +58,7 @@ public class DocParser {
         // TODO 事务，重试，再考虑一下实现方式
         // 构建以及存储索引
         for (int i = 0; i < resultList.size(); i++) {
-            Long snowid = snowflakeIdGenerator.generate();
+            Long snowid = SnowflakeIdGenerator.generate();
 
             Index index = buildIndex();
             indexStorage.saveIndex(index);
