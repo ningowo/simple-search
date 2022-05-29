@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="team.snof.simplesearch.search.mapper.BM25ParameterMapper">
+
+    <sql id="insertFields">
+        word, word_id, word_freq
+    </sql>
+
+    <sql id="selectFields">
+        word, doc_id, word_freq
+    </sql>
+
+    <insert id="insertBM25Parameter" parameterType="BM25Parameter">
+        insert into word_temp(<include refid="insertFields"></include>)
+        values(#{word},#{wordId},#{wordFreq})
+    </insert>
+
+    <select id="getRecordNum" resultType="long">
+        select count(*) from word_temp
+    </select>
+
+<!--得到word的文档数-->
+    <select id="getWordDocNum" resultType="long">
+        select word, count(*) from word_temp group by word having count(*) > 0;
+    </select>
+
+    <select id="getRecord" resultType="BM25Parameter">
+        select <include refid="selectFields"></include>
+        from word_temp
+        where id = #{id}
+    </select>
+
+
+
+</mapper>

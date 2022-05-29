@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="team.snof.simplesearch.search.mapper.DocLenMapper">
+
+    <sql id="insertFields">
+        doc_id, doc_len
+    </sql>
+
+    <insert id="insertDocLen" parameterType="DocLen">
+        insert into doc_length(<include refid="insertFields"></include>)
+        values(#{docId},#{docLen})
+    </insert>
+
+    <select id="getDocAveLen" resultType="long">
+        select avg(doc_len) from doc_length
+    </select>
+
+    <select id="getDocNum" resultType="long">
+        select count(*) from doc_length
+    </select>
+
+    <select id="getDocLen" resultType="long">
+        select doc_len from doc_length
+        where doc_id = #{docId}
+    </select>
+
+</mapper>
