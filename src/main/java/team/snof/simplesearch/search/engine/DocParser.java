@@ -17,13 +17,9 @@ import java.util.List;
 import java.util.concurrent.*;
 
 public class DocParser {
-    private static long docNum = 0;
-    private static long docTotalLength;
-    private static final int FILE_NUM = 256;   // 文件数目
     private static final int CORE_POOL_SIZE = 10;
     private static final int MAXIMUM_POOL_SIZE = 10;
     private static final long KEEP_ALIVE_TIME = 30;
-    private static final int freq = CSVFileReader.READ_SUM / CSVFileReader.READ_NUM;    // 一个文件需要读的次数
     private ThreadPoolExecutor executor = new ThreadPoolExecutor(
             CORE_POOL_SIZE,
             MAXIMUM_POOL_SIZE,
@@ -43,37 +39,10 @@ public class DocParser {
     SnowflakeIdGenerator snowflakeIdGenerator;
 
     public static void main(String[] args) {
-        readOneTime();
-    }
-
-    /**
-     * 一次性读取
-     */
-    private static void readOneTime() {
-        String fileName = "";
-        List<Doc> docList = CSVFileReader.readDocsFromCSV(fileName);
-        // 解析并存储索引和文件
+        CSVFileReader.init(1000, 50000);
+        List<Doc> docs = CSVFileReader.read();
         DocParser docParser = new DocParser();
-        docParser.parse(docList);
-    }
-
-    /**
-     * 分批读取
-     */
-    private static void readPartial() {
-        String parPath = "";
-        for (int i = 0; i < FILE_NUM; i++) {
-            String fileName = parPath + "wukong_100m_" + i + ".csv";
-            // 读每个文件之前都初始化CSVFileReader
-            CSVFileReader.init();
-            for (int j = 0; j < freq; j++) {
-                // 从csv文件获取Doc，每次读1000条，然后多线程解析
-                List<Doc> docList = CSVFileReader.readDocsFromCSV(fileName);
-                // 解析并存储索引和文件
-                DocParser docParser = new DocParser();
-                docParser.parse(docList);
-            }
-        }
+        docParser.parse(docs);
     }
 
     private void parse(List<Doc> docList) {
@@ -87,7 +56,7 @@ public class DocParser {
                     Long snowId = snowflakeIdGenerator.generate();
                     doc.setSnowflakeDocId(snowId);
                     // 将doc存入数据库
-                    docStorage.saveDoc(doc);
+                    docStorage.save(doc);
                     // 修改总文档信息
                     metaDataStorage.addDoc(doc);
                     // 解析doc
@@ -104,7 +73,6 @@ public class DocParser {
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
-
         }
 
         Index index = buildIndex();

@@ -28,9 +28,16 @@ public class DocStorage {
         return mongoTemplate.find(query, Doc.class);
     }
 
-    public void saveDoc(Doc doc) {
+    public void save(List<Doc> docs) {
+        for(Doc doc : docs) {
+            save(doc);
+        }
+    }
+
+    public void save(Doc doc) {
         mongoTemplate.save(doc);
     }
+
 
     public Long deleteById(Long id) {
         Query query = new Query(Criteria.where("SnowflakeDocId").is(id));
