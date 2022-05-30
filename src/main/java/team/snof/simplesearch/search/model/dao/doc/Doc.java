@@ -1,6 +1,5 @@
 package team.snof.simplesearch.search.model.dao.doc;
 
-
 import lombok.Data;
 
 @Data
