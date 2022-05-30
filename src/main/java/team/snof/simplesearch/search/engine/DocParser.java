@@ -46,7 +46,7 @@ public class DocParser {
     }
 
     private void parse(List<Doc> docList) {
-        List<Future<List<Index>>> resultList = new ArrayList<>();
+        List<Future<List<Index>>> resList = new ArrayList<>();
         // 多线程解析doc，并获得索引所需参数
         for(Doc doc : docList) {
             Future<List<Index>> future = executor.submit(new Callable<List<Index>>() {
@@ -63,20 +63,19 @@ public class DocParser {
                     return parseDoc(doc.getCaption());
                 }
             });
+            resList.add(future);
         }
 
         // 通过res.get()方法阻塞主线程，直到解析完成，获取结果
-        for (Future<List<Index>> res : resultList) {
+        for (Future<List<Index>> res : resList) {
             List<Index> indices = null;
             try {
                 indices = res.get();
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
+            indexStorage.save(indices);
         }
-
-        Index index = buildIndex();
-        indexStorage.save(index);
     }
 
     // 看看怎么实现?
