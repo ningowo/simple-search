@@ -87,12 +87,6 @@
             <artifactId>lucene-queryparser</artifactId>
             <version>7.3.0</version>
         </dependency>
-<!--        &lt;!&ndash; jieba分词器 &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>com.huaban</groupId>-->
-<!--            <artifactId>jieba-analysis</artifactId>-->
-<!--            <version>1.0.2</version>-->
-<!--        </dependency>-->
         <!-- Mybatis Plus -->
         <dependency>
             <groupId>com.baomidou</groupId>
