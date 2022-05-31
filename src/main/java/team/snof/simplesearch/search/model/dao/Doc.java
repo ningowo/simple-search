@@ -12,6 +12,12 @@ public class Doc {
 
     private String caption;
 
+    public Doc(Long snowflakeDocId, String url, String caption) {
+        SnowflakeDocId = snowflakeDocId;
+        this.url = url;
+        this.caption = caption;
+    }
+
     public Long getSnowflakeDocId() {
         return SnowflakeDocId;
     }
