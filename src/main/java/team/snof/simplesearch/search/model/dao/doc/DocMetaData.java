@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.model.dao;
+package team.snof.simplesearch.search.model.dao.doc;
 
 
 public class DocMetaData {

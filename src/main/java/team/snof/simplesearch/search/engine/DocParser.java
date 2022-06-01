@@ -3,7 +3,8 @@ package team.snof.simplesearch.search.engine;
 import org.springframework.beans.factory.annotation.Autowired;
 import team.snof.simplesearch.common.util.SnowflakeIdGenerator;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.search.model.dao.*;
+import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.storage.DocStorage;
 import team.snof.simplesearch.search.storage.MetaDataStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
@@ -31,25 +32,28 @@ public class DocParser {
     }
 
     // 解析每个doc中间参数存入word_temp表中
-    public void parseDoc(String Url, String docCaption, long doc_id) {
+    public void parseDoc(String url, String caption, long docId) {
         // 对文档分词
-        List<String> wordList = segmentation.segment(docCaption);
+        List<String> wordList = segmentation.segment(caption);
 
         // 文档长度
         long doc_len = wordList.size();
 
-        // 分词词频 <word, doc_id, word_freq>
-        HashMap<String, Long> map = new HashMap<>();
+        // 这里最好写清map的内容
+        HashMap<String, Long> wordToFreqMap = new HashMap<>();
+        // 统计分词在文档中词频
         for (String word : wordList) {
-            map.put(word, map.getOrDefault(word, 0L) + 1);
+            wordToFreqMap.put(word, wordToFreqMap.getOrDefault(word, 0L) + 1);
         }
-        for (Map.Entry<String, Long> entry : map.entrySet()) {
-            IndexPartial indexPartial = new IndexPartial(entry.getKey(), doc_id, entry.getValue(), doc_len);
+        // 储存分词对应的文档和词频
+        for (Map.Entry<String, Long> entry : wordToFreqMap.entrySet()) {
+            // MongoDB里是结构是{word: {doc_id, doc_len, word_freq}}，在indexPartialStorage实现此逻辑
+            IndexPartial indexPartial = new IndexPartial(entry.getKey(), docId, doc_len, entry.getValue());
             indexPartialStorage.saveIndexPartial(indexPartial);
         }
 
-        // 文档存储
-        Doc doc = new Doc(doc_id, Url, docCaption);
+        // 储存文档
+        Doc doc = new Doc(docId, url, caption);
         docStorage.saveDoc(doc);
 
         // 更新DocMetaData

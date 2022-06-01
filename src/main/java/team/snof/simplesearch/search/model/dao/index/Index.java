@@ -1,9 +1,8 @@
-package team.snof.simplesearch.search.model.dao;
+package team.snof.simplesearch.search.model.dao.index;
 
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
+import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Data

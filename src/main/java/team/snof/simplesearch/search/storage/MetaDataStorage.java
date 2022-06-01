@@ -8,8 +8,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.search.model.dao.DocMetaData;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.doc.DocMetaData;
 import team.snof.simplesearch.search.model.dao.meta.DocMetaData;
 
 import java.util.List;

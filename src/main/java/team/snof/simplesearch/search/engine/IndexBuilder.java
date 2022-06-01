@@ -1,9 +1,10 @@
 package team.snof.simplesearch.search.engine;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import team.snof.simplesearch.search.model.dao.DocInfo;
-import team.snof.simplesearch.search.model.dao.Index;
-import team.snof.simplesearch.search.model.dao.IndexPartial;
+import team.snof.simplesearch.common.util.CollectionSpliter;
+import team.snof.simplesearch.search.model.dao.doc.DocInfo;
+import team.snof.simplesearch.search.model.dao.index.Index;
+import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.model.dao.TempData;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 import team.snof.simplesearch.search.storage.IndexStorage;
@@ -13,14 +14,23 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class IndexBuilder {
+
     @Autowired
     IndexStorage indexStorage;
+
     @Autowired
     MetaDataStorage metaDataStorage;
+
     @Autowired
     IndexPartialStorage indexPartialStorage;
+
+    ThreadPoolExecutor executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 5, 30,
+            TimeUnit.SECONDS, new ArrayBlockingQueue<>(100, false));
 
     // BM25算法常量定义
     private final double k_1 = 1.5;  // k1可取1.2--2
@@ -36,18 +46,28 @@ public class IndexBuilder {
         // 2. 分词权重
         HashMap<String, BigDecimal> wordWeightMap = calculateWeight(doc_num);
 
-        // 3. 读取word_temp中每条记录 计算word-doc关联度 得到(word, doc_id, corr) 存入word_doc_corr表中
-        // 现在直接生成list后  调用index存储即可
-        long recordNum = indexPartialStorage.getIndexPartialNum();
-        // word_temp的每一条记录 即每一个word
-        for (long i = 1; i <= recordNum; i++) {
-            String word = indexPartialStorage.getIndexPartialWord();
+        // 3. 读取word_temp中每条记录，计算word-doc关联度，得到(word, doc_id, corr)。存入word_doc_corr表中
+        List<String> wordListTotal = indexPartialStorage.getAllIndexPartialWord();
+
+        // 对word_temp的部分记录，即部分word遍历读取，避免占用过多内存
+        CollectionSpliter<String> spliter = new CollectionSpliter<>();
+        List<List<String>> wordlistParts = spliter.splitList(wordListTotal, 200);
+
+        // 多线程进行解析和存储
+        for (List<String> wordList : wordlistParts) {
+            executor.execute(() -> calcIndexAndSave(wordList, wordWeightMap));
+        }
+    }
+
+    private void calcIndexAndSave(List<String> wordList, HashMap<String, BigDecimal> wordWeightMap) {
+        for (String word : wordList) {
             IndexPartial indexPartial = indexPartialStorage.getIndexPartial(word);
 
-            // 每条记录内部 又需要对list中的每一项计算corr 并生成索引的docInfoList
+            // 每条记录内部需要对list中的每一项计算corr，并生成索引的docInfoList
             List<DocInfo> docInfoList = new ArrayList<>();
             for (TempData tempData : indexPartial.tempDataList){
                 BigDecimal corr = calculateCorr(word, wordWeightMap, tempData);
+                // 这里不太对吧，结果表只需要存corr，为什么要存词频？docinfo里感觉要把词频去掉
                 DocInfo docInfo = new DocInfo(tempData.getDoc_id(), tempData.getWordFreq(), corr);
                 docInfoList.add(docInfo);
             }
@@ -55,28 +75,38 @@ public class IndexBuilder {
             Index index = new Index(word, docInfoList);
             indexStorage.saveIndex(index);
         }
+        // MongoDB层实现一下
+        // indexStorage.batchSaveIndex();
     }
 
-    //  读取排好序的word_doc_corr 实现对单个索引的构建
+    //  读取排好序的word_doc_corr，实现对单个索引的构建
     public Index buildIndex(String word) {
         List<DocInfo> docIdAndCorrList = new ArrayList<>();
         return new Index(word, docIdAndCorrList);
     }
 
-    // 对word_temp的单条记录word-list计算关联度
+    /**
+     * 对word_temp的单条记录word-list计算关联度
+     * corr = 分词权重 * 分词文档关联度
+     * @param word
+     * @param wordWeightMap
+     * @param tempData
+     * @return
+     */
     public BigDecimal calculateCorr(String word, HashMap<String, BigDecimal> wordWeightMap, TempData tempData) {
-        // corr = 分词权重 * 分词文档关联度
         long doc_id = tempData.getDoc_id();
         long word_freq = tempData.getWordFreq();
         long doc_len = indexPartialStorage.getDocLen(word, doc_id);
         long doc_ave_len = metaDataStorage.getDocAveLen();
 
-        // 1. 分词权重 = weightMap.get(word)
+        // 1. 分词权重
         BigDecimal wordWeight = wordWeightMap.get(word);
 
         // 2. 分词文档关联度
-        BigDecimal corr = wordWeight.multiply(BigDecimal.valueOf(word_freq).multiply(BigDecimal.valueOf(k_1+1)).divide
-                (BigDecimal.valueOf((k_1*(1-b)) + b*(doc_len/doc_ave_len) + word_freq))) ;
+        BigDecimal corr = wordWeight
+                        .multiply(BigDecimal.valueOf(word_freq)
+                        .multiply(BigDecimal.valueOf(k_1+1))
+                        .divide(BigDecimal.valueOf((k_1*(1-b)) + b* (double) (doc_len/doc_ave_len) + word_freq))) ;
 
         return corr;
     }

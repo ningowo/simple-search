@@ -1,6 +1,7 @@
-package team.snof.simplesearch.search.model.dao;
+package team.snof.simplesearch.search.model.dao.index;
 
 import lombok.Builder;
+import team.snof.simplesearch.search.model.dao.TempData;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +14,7 @@ public class IndexPartial {
 
     public List<TempData> tempDataList;
 
-    public IndexPartial(String indexKey, long docId, long wordFreq, long docLen) {
+    public IndexPartial(String indexKey, long docId, long docLen, long wordFreq) {
         this.indexKey = indexKey;
         TempData tempData = new TempData(docId, wordFreq, docLen);
         List<TempData> tempDataList = new ArrayList<>();
