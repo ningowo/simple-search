@@ -1,22 +1,22 @@
 package team.snof.simplesearch.repository;
 
-import team.snof.simplesearch.search.model.bo.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import team.snof.simplesearch.search.model.bo.favorite.User;
 
 import java.util.List;
 import java.util.Optional;
 
 
 @Repository
-public interface UserRepository extends JpaRepository<Users, Long> {
-    Optional<Users> findByEmail(String email);
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
 
-    Optional<Users> findByUsernameOrEmail(String username, String email);
+    Optional<User> findByUsernameOrEmail(String username, String email);
 
-    List<Users> findByIdIn(List<Long> userIds);
+    List<User> findByIdIn(List<Long> userIds);
 
-    Optional<Users> findByUsername(String username);
+    Optional<User> findByUsername(String username);
 
     Boolean existsByUsername(String username);
 

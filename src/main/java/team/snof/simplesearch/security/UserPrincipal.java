@@ -1,10 +1,10 @@
 package team.snof.simplesearch.security;
 
-import team.snof.simplesearch.search.model.bo.Users;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import team.snof.simplesearch.search.model.bo.favorite.User;
 
 import java.util.Collection;
 import java.util.List;
@@ -40,7 +40,7 @@ public class UserPrincipal implements UserDetails {
         this.authorities = authorities;
     }
 
-    public static UserPrincipal create(Users user) {
+    public static UserPrincipal create(User user) {
         List<GrantedAuthority> authorities = user.getRoles().stream().map(role ->
                 new SimpleGrantedAuthority(role.getName().name())
         ).collect(Collectors.toList());
