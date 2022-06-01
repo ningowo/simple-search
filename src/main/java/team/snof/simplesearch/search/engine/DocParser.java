@@ -39,8 +39,8 @@ public class DocParser {
     SnowflakeIdGenerator snowflakeIdGenerator;
 
     public static void main(String[] args) {
-        CSVFileReader.init(1000, 50000);
-        List<Doc> docs = CSVFileReader.read();
+        String filePath = "";
+        List<Doc> docs = CSVFileReader.read(filePath);
         DocParser docParser = new DocParser();
         docParser.parse(docs);
     }

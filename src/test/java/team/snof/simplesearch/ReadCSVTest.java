@@ -19,7 +19,6 @@ public class ReadCSVTest {
 
     @Test
     public void readCsvTest() {
-        CSVFileReader.init(1000, 50000);
         List<Doc> docs = CSVFileReader.read();
         HashSet<Doc> set = new HashSet<>(docs);
         System.out.println(set.size());
