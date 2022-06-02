@@ -8,6 +8,9 @@ public class DocInfo {
     private BigDecimal corr;  // 相关度系数
 
     public DocInfo(long doc_id, long wordFreq, BigDecimal corr) {
+        this.docId = doc_id;
+        this.freq = wordFreq;
+        this.corr = corr;
     }
 
     public Long getDocId() {
