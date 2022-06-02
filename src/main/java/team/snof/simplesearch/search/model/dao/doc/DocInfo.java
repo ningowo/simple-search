@@ -4,10 +4,9 @@ import java.math.BigDecimal;
 
 public class DocInfo {
     private Long docId; // 文档的id
-    private Long freq;  // 词频
     private BigDecimal corr;  // 相关度系数
 
-    public DocInfo(long doc_id, long wordFreq, BigDecimal corr) {
+    public DocInfo(long doc_id, BigDecimal corr) {
     }
 
     public Long getDocId() {
@@ -16,14 +15,6 @@ public class DocInfo {
 
     public void setDocId(Long docId) {
         this.docId = docId;
-    }
-
-    public Long getFreq() {
-        return freq;
-    }
-
-    public void setFreq(Long freq) {
-        this.freq = freq;
     }
 
     public BigDecimal getCorr() {

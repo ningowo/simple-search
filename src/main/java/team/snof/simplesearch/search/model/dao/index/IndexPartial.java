@@ -14,9 +14,9 @@ public class IndexPartial {
 
     public List<TempData> tempDataList;
 
-    public IndexPartial(String indexKey, long docId, long docLen, long wordFreq) {
+    public IndexPartial(String indexKey, long docId, long wordFreq) {
         this.indexKey = indexKey;
-        TempData tempData = new TempData(docId, wordFreq, docLen);
+        TempData tempData = new TempData(docId, wordFreq);
         List<TempData> tempDataList = new ArrayList<>();
         this.tempDataList = tempDataList;
     }

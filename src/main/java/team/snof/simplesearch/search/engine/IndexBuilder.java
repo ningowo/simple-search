@@ -6,9 +6,9 @@ import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.model.dao.TempData;
+import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 import team.snof.simplesearch.search.storage.IndexStorage;
-import team.snof.simplesearch.search.storage.MetaDataStorage;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -24,10 +24,10 @@ public class IndexBuilder {
     IndexStorage indexStorage;
 
     @Autowired
-    MetaDataStorage metaDataStorage;
+    IndexPartialStorage indexPartialStorage;
 
     @Autowired
-    IndexPartialStorage indexPartialStorage;
+    DocLenStorage docLenStorage;
 
     ThreadPoolExecutor executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 5, 30,
             TimeUnit.SECONDS, new ArrayBlockingQueue<>(100, false));
@@ -36,17 +36,16 @@ public class IndexBuilder {
     private final double k_1 = 1.5;  // k1可取1.2--2
     private final double b = 0.75;  // b取0.75
 
+    // 计算文档平均长度与总文档数(全局变量 避免频繁查询）
+    long docAveLen = docLenStorage.getDocAveLen();
+    long docTotalNum = docLenStorage.getDocTotalNum();
 
     // 根据中间表构建索引
     public void buildIndexes() {
-        // 1. 计算文档平均长度与总文档数
-        long doc_ave_len = metaDataStorage.getAvgLen();
-        long doc_num = metaDataStorage.getDocNum();
+        // 分词权重
+        HashMap<String, BigDecimal> wordWeightMap = calculateWeight(docTotalNum);
 
-        // 2. 分词权重
-        HashMap<String, BigDecimal> wordWeightMap = calculateWeight(doc_num);
-
-        // 3. 读取word_temp中每条记录，计算word-doc关联度，得到(word, doc_id, corr)。存入word_doc_corr表中
+        // 读取word_temp中每条记录，计算word-doc关联度，得到(word, doc_id, corr)。存入word_doc_corr表中
         List<String> wordListTotal = indexPartialStorage.getAllIndexPartialWord();
 
         // 对word_temp的部分记录，即部分word遍历读取，避免占用过多内存
@@ -67,22 +66,16 @@ public class IndexBuilder {
             List<DocInfo> docInfoList = new ArrayList<>();
             for (TempData tempData : indexPartial.tempDataList){
                 BigDecimal corr = calculateCorr(word, wordWeightMap, tempData);
-                // 这里不太对吧，结果表只需要存corr，为什么要存词频？docinfo里感觉要把词频去掉
-                DocInfo docInfo = new DocInfo(tempData.getDoc_id(), tempData.getWordFreq(), corr);
+                DocInfo docInfo = new DocInfo(tempData.getDocId(), corr);
                 docInfoList.add(docInfo);
             }
 
             Index index = new Index(word, docInfoList);
-            indexStorage.saveIndex(index);
+            indexStorage.saveIndex(index);  // 更新操作  若Index表中不存在word则新建
         }
         // MongoDB层实现一下
         // indexStorage.batchSaveIndex();
-    }
-
-    //  读取排好序的word_doc_corr，实现对单个索引的构建
-    public Index buildIndex(String word) {
-        List<DocInfo> docIdAndCorrList = new ArrayList<>();
-        return new Index(word, docIdAndCorrList);
+        // 上面单个word已经存了  或者上面存一个list(index)然后这里indexStorage.batchSaveIndex(list)？？
     }
 
     /**
@@ -94,25 +87,24 @@ public class IndexBuilder {
      * @return
      */
     public BigDecimal calculateCorr(String word, HashMap<String, BigDecimal> wordWeightMap, TempData tempData) {
-        long doc_id = tempData.getDoc_id();
-        long word_freq = tempData.getWordFreq();
-        long doc_len = indexPartialStorage.getDocLen(word, doc_id);
-        long doc_ave_len = metaDataStorage.getDocAveLen();
+        long docId = tempData.getDocId();
+        long wordFreq = tempData.getWordFreq();
+        long docLen = docLenStorage.getDocLen(docId);
 
         // 1. 分词权重
         BigDecimal wordWeight = wordWeightMap.get(word);
 
         // 2. 分词文档关联度
         BigDecimal corr = wordWeight
-                        .multiply(BigDecimal.valueOf(word_freq)
+                        .multiply(BigDecimal.valueOf(wordFreq)
                         .multiply(BigDecimal.valueOf(k_1+1))
-                        .divide(BigDecimal.valueOf((k_1*(1-b)) + b* (double) (doc_len/doc_ave_len) + word_freq))) ;
+                        .divide(BigDecimal.valueOf((k_1*(1-b)) + b* (double) (docLen/docAveLen) + wordFreq))) ;
 
         return corr;
     }
 
     // 计算所有word的权重
-    public HashMap<String, BigDecimal> calculateWeight(long doc_num) {
+    public HashMap<String, BigDecimal> calculateWeight(long docTotalNum) {
         // 1. 统计包含某个分词的文档个数 word,wordDocNum
         HashMap<String, Long> wordDocNumMap = indexPartialStorage.getWordDocNum();
 
@@ -120,7 +112,7 @@ public class IndexBuilder {
         HashMap<String, BigDecimal> wordWeightMap = new HashMap<>();
         for (String word : wordDocNumMap.keySet()) {
             long wordDocNum = wordDocNumMap.get(word);
-            BigDecimal wordWeight = BigDecimal.valueOf(Math.log((doc_num - wordDocNum + 0.5) / (wordDocNum + 0.5)));
+            BigDecimal wordWeight = BigDecimal.valueOf(Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5)));
             wordWeightMap.put(word, wordWeight);
         }
         return wordWeightMap;
