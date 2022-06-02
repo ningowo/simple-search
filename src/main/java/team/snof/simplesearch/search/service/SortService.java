@@ -14,9 +14,6 @@ import java.util.ArrayList;
 
 public class SortService {
     private static final double k_3 = 1.5;  // k3  1.2~2
-    public static void main(String []args){
-        test();
-    }
     public static List<Long> order(List<String> query, List<Index> indexs) {
         //1.计算分词在query出的出现次数
         HashMap<String, Long> tf = new HashMap<>();

@@ -11,6 +11,7 @@ import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Component
 public class SearchService {
 
@@ -56,8 +57,8 @@ public class SearchService {
         // 缓存分词索引结果
 
         // 调排序
-        // 王昱豪的排序逻辑，现在好像还没有，你和他对接一下
-        // List<Index> orderedIndex= order(List<List<Index>>)
+        //wyh: order(query分词列表，Index列表)
+        //List<Index> orderedIndex= order(words,List<Index>)
 
         // 根据索引的docid查出doc，也就是query的结果
         // engine.batchGetDoc()
