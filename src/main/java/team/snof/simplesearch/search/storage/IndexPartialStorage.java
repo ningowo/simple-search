@@ -19,7 +19,7 @@ public class IndexPartialStorage {
     public List<String> getAllIndexPartialWord() {
         // 优化mongoDB操作？？ 这样写好蠢啊
         List<String> indexPartialWordList = new ArrayList<>();
-        List<IndexPartial> indexPartials = mongoTemplate.findAll(IndexPartial.class);
+        List<IndexPartial> indexPartials = mongoTemplate.findAll(IndexPartial.class, "word_temp");
         for (IndexPartial indexPartial : indexPartials) {
             indexPartialWordList.add(indexPartial.getIndexKey());
         }
@@ -28,7 +28,7 @@ public class IndexPartialStorage {
 
     public IndexPartial getIndexPartial(String word) {
         Query query = new Query().addCriteria(Criteria.where("indexKey").is(word));
-        return mongoTemplate.findOne(query, IndexPartial.class);
+        return mongoTemplate.findOne(query, IndexPartial.class, "word_temp");
     }
 
     // <word, word对应doc数量>
@@ -36,7 +36,7 @@ public class IndexPartialStorage {
         HashMap<String, Long> wordDocNumMap = new HashMap<>();
         for (String word : wordListTotal) {
             Query query = new Query().addCriteria(Criteria.where("indexKey").is(word));
-            long wordDocNum = mongoTemplate.findOne(query, IndexPartial.class).getTempDataList().size();
+            long wordDocNum = mongoTemplate.findOne(query, IndexPartial.class, "word_temp").getTempDataList().size();
             wordDocNumMap.put(word, wordDocNum);
         }
         return wordDocNumMap;
@@ -47,6 +47,6 @@ public class IndexPartialStorage {
         Query query = new Query().addCriteria(Criteria.where("indexKey").is(indexPartial.getIndexKey()));
         Update update = new Update();
         update.set("tempDataList", indexPartial.getTempDataList());
-        mongoTemplate.upsert(query, update, IndexPartial.class);
+        mongoTemplate.upsert(query, update, IndexPartial.class, "word_temp");
     }
 }
