@@ -12,12 +12,18 @@ import java.util.List;
 @Setter
 @ToString
 @ApiModel("搜索结果列表")
-public class SearchListResponseVO {
+public class SearchResponseVO {
 
-    @ApiModelProperty("doc list")
+    @ApiModelProperty(value = "文档列表")
     private List<DocVO> docVOList;
 
-    @ApiModelProperty("request")
+    @ApiModelProperty(value = "文档列表ID")
+    private List<Long> DocIds;
+
+    @ApiModelProperty(value = "相关搜索列表")
+    private List<String> relatedSearchList;
+
+    @ApiModelProperty(notes = "看周寅刚的实现方式是否要用到这个")
     private SearchRequestVO request;
 
 }
