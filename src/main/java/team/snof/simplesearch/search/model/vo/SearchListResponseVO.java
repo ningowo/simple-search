@@ -14,10 +14,13 @@ import java.util.List;
 @ApiModel("搜索结果列表")
 public class SearchListResponseVO {
 
-    @ApiModelProperty("doc list")
+    @ApiModelProperty(value = "文档列表")
     private List<DocVO> docVOList;
 
-    @ApiModelProperty("request")
+    @ApiModelProperty(value = "相关搜索列表")
+    private List<String> relatedSearchList;
+
+    @ApiModelProperty(notes = "看周寅刚的实现方式是否要用到这个")
     private SearchRequestVO request;
 
 }

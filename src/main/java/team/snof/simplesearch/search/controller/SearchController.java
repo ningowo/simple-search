@@ -26,9 +26,13 @@ public class SearchController {
     private RedisTemplate redisTemplate;
 
 
-    @RequestMapping(value = "/s", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET)
     @ApiOperation("搜索接口")
-    public ResultVO<SearchListResponseVO> search(@RequestBody SearchRequestVO request) {
+    public ResultVO search(@RequestBody SearchRequestVO request) {
+
+        if (request.getQuery().isBlank()) {
+            return ResultVO.newParamErrorResult("查询参数不能为空！");
+        }
 
         return ResultVO.newSuccessResult(searchService.search(request));
     }
