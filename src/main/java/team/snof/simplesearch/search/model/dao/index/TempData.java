@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.model.dao;
+package team.snof.simplesearch.search.model.dao.index;
 
 public class TempData {
     private long docId;
