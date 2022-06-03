@@ -1,6 +1,5 @@
 package team.snof.simplesearch.search.model.dao.doc;
 
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -8,7 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Doc {
 
-    public Long SnowflakeDocId;
+    public Long docId;
 
     public String url;
 
