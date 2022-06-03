@@ -2,6 +2,7 @@ package team.snof.simplesearch.search.mapper;
 
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
+import org.mapstruct.Mapper;
 
 import java.util.HashMap;
 

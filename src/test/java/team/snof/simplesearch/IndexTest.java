@@ -31,7 +31,7 @@ public class IndexTest {
         index.getDocInfoList().add(d2);
         index.getDocInfoList().add(d3);
         indexStorage.save(index);
-    }
+}
 
     @Test
     void deleteIndexTest() {
