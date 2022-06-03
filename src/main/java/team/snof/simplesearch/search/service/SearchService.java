@@ -2,10 +2,9 @@ package team.snof.simplesearch.search.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.search.model.vo.SearchListResponseVO;
+import team.snof.simplesearch.search.model.vo.SearchResponseVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 
 import java.util.ArrayList;
@@ -21,7 +20,7 @@ public class SearchService {
     @Autowired
     private RedisTemplate redisTemplate;
 
-    public SearchListResponseVO search(SearchRequestVO request) {
+    public SearchResponseVO search(SearchRequestVO request) {
 
         // 查缓存是否有分页结果
         // 接口以参考这个 https://blog.csdn.net/AlbenXie/article/details/109348114
@@ -44,7 +43,7 @@ public class SearchService {
 
         // 调排序
 
-        return new SearchListResponseVO();
+        return new SearchResponseVO();
     }
 
     public String test() {

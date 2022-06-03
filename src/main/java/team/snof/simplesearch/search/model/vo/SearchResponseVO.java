@@ -12,7 +12,7 @@ import java.util.List;
 @Setter
 @ToString
 @ApiModel("搜索结果列表")
-public class SearchListResponseVO {
+public class SearchResponseVO {
 
     @ApiModelProperty(value = "文档列表")
     private List<DocVO> docVOList;
