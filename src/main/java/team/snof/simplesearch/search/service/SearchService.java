@@ -34,9 +34,9 @@ public class SearchService {
         // Redis接口以参考这个 https://blog.csdn.net/AlbenXie/article/details/109348114
         // 自己考虑具体缓存什么内容
         redisTemplate.opsForHash().get();
-        if () {
-            // 返回结果
-        }
+//        if () {
+//            // 返回结果
+//        }
 
         // 分词
         List<String> words = wordSegmentation.segment(request.getQuery());
@@ -50,9 +50,9 @@ public class SearchService {
         }
 
         // 调搜索引擎
-        if () { // 缓存里分词的索引不够
-            engine.getIndex();
-        }
+//        if () { // 缓存里分词的索引不够
+//            engine.getIndex();
+//        }
 
         // 缓存分词索引结果
 

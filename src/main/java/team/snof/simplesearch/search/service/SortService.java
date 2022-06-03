@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.service;
 
+import team.snof.simplesearch.search.model.dao.doc.Doc4Sort;
 import team.snof.simplesearch.search.model.dao.DocInfo;
 import team.snof.simplesearch.search.model.dao.Index;
 
@@ -9,19 +10,6 @@ import java.util.*;
 
 public class SortService {
     private static final double k_3 = 1.5;  // k3  1.2~2
-
-    // 文档类用于排序，{docID,similarity}
-    private static class Doc implements  Comparable<Doc> {
-        private Long DocId;
-        private BigDecimal similarity;
-        public Doc(Long docId,BigDecimal similarity){
-            this.DocId = docId;
-            this.similarity = similarity;
-        }
-        public int compareTo(Doc y){
-            return similarity.compareTo(y.similarity);
-        }
-    }
 
     public static List<Long> order(List<String> words, List<Index> indexs) {
         //1.计算分词在query出的出现次数
@@ -44,16 +32,16 @@ public class SortService {
         }
 
         //3.按相似度从高到低排序
-        Doc [] docs = new Doc[doc2Similarity.size()];
+        Doc4Sort[] docs = new Doc4Sort[doc2Similarity.size()];
         int idx = 0;
         for(Map.Entry<Long,BigDecimal> entry:doc2Similarity.entrySet()){
-            docs[idx++] = new Doc(entry.getKey(),entry.getValue());
+            docs[idx++] = new Doc4Sort(entry.getKey(),entry.getValue());
         }
         List<Long> orderedDocs = new ArrayList<>();//DocId
         Arrays.sort(docs,Collections.reverseOrder());
 
-        for(Doc doc:docs){
-            orderedDocs.add(doc.DocId);
+        for(Doc4Sort doc:docs){
+            orderedDocs.add(doc.getDocId());
             //System.out.printf("%d %f\n",doc.DocId,Double.valueOf(doc.similarity.toString()));
         }
         return orderedDocs;

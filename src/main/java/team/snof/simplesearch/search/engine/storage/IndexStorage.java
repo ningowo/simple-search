@@ -9,8 +9,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
+import team.snof.simplesearch.search.model.dao.IndexPartial;
 import team.snof.simplesearch.search.model.dao.index.Index;
-import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 
 import java.util.List;
 

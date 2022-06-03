@@ -8,9 +8,9 @@ import team.snof.simplesearch.search.engine.storage.DocStorage;
 import team.snof.simplesearch.search.engine.storage.IndexStorage;
 import team.snof.simplesearch.search.engine.storage.MetaDataStorage;
 import team.snof.simplesearch.search.model.bo.BM25ParseDocResult;
+import team.snof.simplesearch.search.model.dao.IndexPartial;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.index.Index;
-import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 
 import java.util.ArrayList;
 import java.util.List;

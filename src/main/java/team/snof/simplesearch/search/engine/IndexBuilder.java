@@ -6,7 +6,6 @@ import team.snof.simplesearch.search.model.dao.Index;
 import team.snof.simplesearch.search.model.dao.IndexPartial;
 import team.snof.simplesearch.search.model.dao.TempData;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
-import team.snof.simplesearch.search.storage.IndexStorage;
 import team.snof.simplesearch.search.storage.MetaDataStorage;
 
 import java.math.BigDecimal;
