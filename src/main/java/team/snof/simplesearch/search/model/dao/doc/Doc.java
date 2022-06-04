@@ -5,10 +5,39 @@ import lombok.Data;
 @Data
 public class Doc {
 
-    public Long SnowflakeDocId;
+    private Long SnowflakeDocId;
 
-    public String url;
+    private String url;
 
-    public String caption;
+    private String caption;
 
+    public Doc(Long snowflakeDocId, String url, String caption) {
+        SnowflakeDocId = snowflakeDocId;
+        this.url = url;
+        this.caption = caption;
+    }
+
+    public Long getSnowflakeDocId() {
+        return SnowflakeDocId;
+    }
+
+    public void setSnowflakeDocId(Long snowflakeDocId) {
+        SnowflakeDocId = snowflakeDocId;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getCaption() {
+        return caption;
+    }
+
+    public void setCaption(String caption) {
+        this.caption = caption;
+    }
 }
