@@ -1,17 +1,18 @@
 package team.snof.simplesearch.search.model.dao.index;
 
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
+import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Data
 public class Index {
+    public String indexKey; // 分词
 
-    // 转码过的transcoded中文或英文分词
-    public Long IndexKey;
+    public List<DocInfo> docInfoList;
 
-    public List<Pair<Long, BigDecimal>> docIdAndCorrList;
-
+    public Index(String indexKey, List<DocInfo>docInfoList) {
+        this.indexKey = indexKey;
+        this.docInfoList = docInfoList;
+    }
 }
