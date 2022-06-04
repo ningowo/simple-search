@@ -12,13 +12,13 @@ import lombok.ToString;
 @ApiModel
 public class PageQueryVO {
 
-    @ApiModelProperty(value = "每页数量", required = true)
+    @ApiModelProperty
     protected Integer pageSize;
 
-    @ApiModelProperty(value = "查询页码", required = true)
+    @ApiModelProperty
     protected Integer pageNum;
 
-    @ApiModelProperty(value = "总请求数", notes = "请求时空着")
+    @ApiModelProperty(notes = "请求时空着")
     protected Long total;
 
 }

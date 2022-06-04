@@ -5,7 +5,6 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -15,10 +14,10 @@ import java.util.List;
 @ApiModel
 public class SearchRequestVO extends PageQueryVO {
 
-    @ApiModelProperty(value = "要搜索的字符串")
+    @ApiModelProperty
     String query;
 
-    @ApiModelProperty(value = "过滤词")
+    @ApiModelProperty
     List<String> filterWordList;
 
 }

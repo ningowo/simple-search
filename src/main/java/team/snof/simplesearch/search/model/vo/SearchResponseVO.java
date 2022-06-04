@@ -17,6 +17,9 @@ public class SearchResponseVO {
     @ApiModelProperty(value = "文档列表")
     private List<DocVO> docVOList;
 
+    @ApiModelProperty(value = "文档列表ID")
+    private List<Long> DocIds;
+
     @ApiModelProperty(value = "相关搜索列表")
     private List<String> relatedSearchList;
 
