@@ -1,7 +1,6 @@
 package team.snof.simplesearch.search.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,15 +8,11 @@ import org.springframework.stereotype.Service;
 import team.snof.simplesearch.search.mapper.favourite.CollectionMapper;
 import team.snof.simplesearch.search.mapper.favourite.DatasetMapper;
 import team.snof.simplesearch.search.mapper.favourite.FavouriteMapper;
-import team.snof.simplesearch.search.mapper.favourite.UserMapper;
 import team.snof.simplesearch.search.model.bo.favorite.Collection;
 import team.snof.simplesearch.search.model.bo.favorite.Dataset;
 import team.snof.simplesearch.search.model.bo.favorite.Favourite;
-import team.snof.simplesearch.search.model.bo.favorite.User;
 import team.snof.simplesearch.search.model.vo.ResultVO;
 
-import java.io.Serializable;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -36,9 +31,6 @@ public class FavouriteService {
 
     @Autowired
     private FavouriteMapper favouriteMapper;
-
-    @Autowired
-    private UserMapper userMapper;
 
     //新建收藏夹
     public Object addFavourite(Integer userId, String favouriteName) {
