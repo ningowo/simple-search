@@ -1,20 +1,17 @@
 package team.snof.simplesearch.search.model.dao.index;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.ArrayList;
+import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 public class Index {
-    public String indexKey;
+    public String indexKey; // 分词
 
     public List<DocInfo> docInfoList;
 
-    public Index() {
-        this.indexKey = "";
-        this.docInfoList = new ArrayList<>();
+    public Index(String indexKey, List<DocInfo>docInfoList) {
+        this.indexKey = indexKey;
+        this.docInfoList = docInfoList;
     }
 }

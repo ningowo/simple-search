@@ -1,19 +1,21 @@
 package team.snof.simplesearch.search.engine;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import team.snof.simplesearch.common.util.CSVFileReader;
 import team.snof.simplesearch.common.util.SnowflakeIdGenerator;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.search.engine.storage.DocStorage;
-import team.snof.simplesearch.search.engine.storage.IndexStorage;
 import team.snof.simplesearch.search.model.bo.BM25ParseDocResult;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.doc.DocLen;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
+import team.snof.simplesearch.search.storage.DocLenStorage;
+import team.snof.simplesearch.search.storage.DocStorage;
+import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class DocParser {
     private static final int CORE_POOL_SIZE = 10;
@@ -29,63 +31,44 @@ public class DocParser {
     @Autowired
     WordSegmentation segmentation;
     @Autowired
-    IndexStorage indexStorage;
+    SnowflakeIdGenerator snowflakeIdGenerator;
     @Autowired
     DocStorage docStorage;
     @Autowired
-    SnowflakeIdGenerator snowflakeIdGenerator;
+    IndexPartialStorage indexPartialStorage;
+    @Autowired
+    DocLenStorage docLenStorage;
 
-    public static void main(String[] args) {
-        String filePath = "";
-        List<Doc> docs = CSVFileReader.readFile(filePath);
-        DocParser docParser = new DocParser();
-        // 存入数据库
-        // docParser.docStorage.saveBatch(docs);
-        docParser.parse(docs);
-    }
-
-    private void parse(List<Doc> docList) {
-        List<Future<List<Index>>> resList = new ArrayList<>();
-        // 多线程解析doc，并获得索引所需参数
+    // 解析doc，并获得索引所需参数
+    public void parse(List<Doc> docList) {
         for (Doc doc : docList) {
-            Future<List<Index>> future = executor.submit(new Callable<List<Index>>() {
-                @Override
-                public List<Index> call() throws Exception {
-                    // 设置doc的唯一id
-                    Long snowId = snowflakeIdGenerator.generate();
-                    doc.setSnowflakeDocId(snowId);
-                    // 解析doc
-                    return parseDoc(doc.getCaption());
-                }
-            });
-            resList.add(future);
-        }
-
-        // 通过res.get()方法阻塞主线程，直到解析完成，获取结果
-        for (Future<List<Index>> res : resList) {
-            List<Index> indices = null;
-            try {
-                indices = res.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-            indexStorage.saveBatch(indices);
+            long docId = snowflakeIdGenerator.generate();  // 调用雪花id生成doc_id 后面文档存储也要用这个id
+            parseDoc(doc.getUrl(), doc.getCaption(), docId);
         }
     }
 
-    // 看看怎么实现?
-    private void buildIndexAndIndexPartial() {
+    // 解析每个doc中间参数存入word_temp表中
+    public void parseDoc(String url, String caption, long docId) {
+        // 对文档分词
+        List<String> wordList = segmentation.segment(caption);
+
+        // 文档长度
+        long docLength = wordList.size();
+        // 储存文档长度到doc_length表  {doc_id, doc_len}
+        DocLen docLen = new DocLen(docId, docLength);
+        docLenStorage.save(docLen);
+
+        // 分词在文档中词频
+        HashMap<String, Long> wordToFreqMap = new HashMap<>();
+        for (String word : wordList) {
+            wordToFreqMap.put(word, wordToFreqMap.getOrDefault(word, 0L) + 1);
+        }
+        // 储存分词对应的文档和词频 {word: {doc_id, word_freq}}
+        for (Map.Entry<String, Long> entry : wordToFreqMap.entrySet()) {
+            IndexPartial indexPartial = new IndexPartial(entry.getKey(), docId, entry.getValue());
+            indexPartialStorage.saveIndexPartial(indexPartial);
+        }
     }
-
-
-    private IndexPartial buildIndexPartial(String parseResult) {
-        return IndexPartial.builder().build();
-    }
-
-    private Index buildIndex() {
-        return new Index();
-    }
-
 
     public List<Index> parseDoc(String docCaption) {
         BM25ParseDocResult bm25ParseDocResult = BM25ParseDocResult.builder().build();
@@ -96,5 +79,4 @@ public class DocParser {
 
         return null;
     }
-
 }
