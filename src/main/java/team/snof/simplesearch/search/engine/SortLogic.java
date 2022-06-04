@@ -17,7 +17,7 @@ import java.util.*;
 @Component
 public class SortLogic {
     @Autowired
-    EngineQuery engineQuery;
+    EngineImpl engineImpl;
     @Autowired
     MetaDataStorage metaDataStorage;
     @Autowired
@@ -99,7 +99,7 @@ public class SortLogic {
 
     private  String calRelatedSearch(Long docId){
         //1.对文档分词
-        Doc doc = engineQuery.findDoc(docId);
+        Doc doc = engineImpl.findDoc(docId);
         List<String> wordList = segmentation.segment(doc.getCaption());
 
         //2.判断IDF是否为空并计算IDF
@@ -128,31 +128,4 @@ public class SortLogic {
 
         return result;
     }
-
-//    private static void test(){
-//        List<String> query = new ArrayList<>(2);
-//        List<Index> indexs = new ArrayList<>(2);
-//        query.add("test");query.add("namo");
-//
-//        List<DocInfo>  index1 = new ArrayList<>();
-//        List<DocInfo>  index2 = new ArrayList<>();
-//        index1.add(new DocInfo(1,3,new BigDecimal(0.2)));
-//        index1.add(new DocInfo(2,4,new BigDecimal(0.6)));
-//        index2.add(new DocInfo(1,3,new BigDecimal(0.4)));
-//        index2.add(new DocInfo(2,4,new BigDecimal(0.3)));
-//
-//        indexs.add(new Index("test",index1));  indexs.add(new Index("namo",index2));
-//
-//        List<Long> docs = order(query,indexs);
-//        for(Long docID:docs){
-//            System.out.printf("%d\n",docID);
-//        }
-//    }
-
-//    public static void main(String[] args){
-//        List<String> words = new ArrayList<>();
-//        words.add("test");
-//        words.add("namomo");
-//        searchRelated(words);
-//    }
 }

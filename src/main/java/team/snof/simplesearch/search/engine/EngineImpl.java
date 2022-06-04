@@ -16,16 +16,17 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class EngineQuery implements Engine {
+public class EngineImpl implements Engine {
     @Autowired
     IndexStorage indexStorage;
     @Autowired
-    EngineQuery engineQuery;
+    EngineImpl engineImpl;
     @Autowired
     SortLogic sortLogic;
     @Autowired
     RedisTemplate redisTemplate;
 
+    private final String indexRedisFormat = "engine:index:%s:string";//索引redis格式串
     private final int expireDuration = 10;//倒排索引缓存时间(min)
     //返回全部文档结果
     public CompleteResult find(HashMap<String, Integer> wordToFreqMap){
@@ -33,9 +34,9 @@ public class EngineQuery implements Engine {
          List<String> words = new ArrayList<>();
          for(String word : wordToFreqMap.keySet()) words.add(word);
 
-         List<Index> indexs = engineQuery.batchFindIndexs(words);
+         List<Index> indexs = engineImpl.batchFindIndexs(words);
          List<Long> docIds = sortLogic.DocSort(indexs,wordToFreqMap);
-         List<Doc> docs = engineQuery.batchFindDocs(docIds);
+         List<Doc> docs = engineImpl.batchFindDocs(docIds);
          return new CompleteResult(docs,docIds,sortLogic.wordSort(docs));
     }
 
@@ -45,13 +46,13 @@ public class EngineQuery implements Engine {
         List<String> words = new ArrayList<>();
         for(String word : wordToFreqMap.keySet()) words.add(word);
 
-        List<Index> indexs = engineQuery.batchFindIndexs(words);
+        List<Index> indexs = engineImpl.batchFindIndexs(words);
         List<Long> docIds = sortLogic.DocSort(indexs,wordToFreqMap);
         List<Long> partialDocIds = new ArrayList<>();
         for(int i = offset, upper = offset + limit; i < docIds.size() && i < upper; ++i){//避免越界
             partialDocIds.add(docIds.get(i));
         }
-        List<Doc> docs = engineQuery.batchFindDocs(partialDocIds);
+        List<Doc> docs = engineImpl.batchFindDocs(partialDocIds);
         return new RangeResult(docs,docIds,sortLogic.wordSort(docs));
     }
 
@@ -73,13 +74,14 @@ public class EngineQuery implements Engine {
     // 索引查询
     public Index findIndex(String word){
         //redis查询
-        Index index = (Index)redisTemplate.opsForValue().get(word);
+        String wordRedisKey = String.format(indexRedisFormat,word);
+        Index index = (Index)redisTemplate.opsForValue().get(wordRedisKey);
 
         //判断是否有缓存
         if (index == null) {
             index = indexStorage.findByKey(word).get(0);
-            redisTemplate.opsForValue().set(word, index);
-            redisTemplate.expire(word, expireDuration, TimeUnit.MINUTES);
+            redisTemplate.opsForValue().set(wordRedisKey, index);
+            redisTemplate.expire(wordRedisKey, expireDuration, TimeUnit.MINUTES);
         }
         return index;
     }
@@ -87,14 +89,18 @@ public class EngineQuery implements Engine {
     //批查询索引
     public List<Index> batchFindIndexs(List<String> words){
         //redis查询
-        List<Index> indexs = redisTemplate.opsForValue().multiGet(words);
+        List<String> wordRedisKeys = new ArrayList<>(words.size());
+        for(int i = 0; i < words.size(); ++i){
+            wordRedisKeys.set(i, String.format(indexRedisFormat,words.get(i)));
+        }
+        List<Index> indexs = redisTemplate.opsForValue().multiGet(wordRedisKeys);
 
         //判断是否有缓存
         for(int i = 0; i < indexs.size(); ++i){
             if(indexs.get(i) == null){
                 indexs.set(i, indexStorage.findByKey(words.get(i)).get(0));
-                redisTemplate.opsForValue().set(words.get(i), indexs.get(i));
-                redisTemplate.expire(words.get(i), expireDuration, TimeUnit.MINUTES);
+                redisTemplate.opsForValue().set(wordRedisKeys.get(i), indexs.get(i));
+                redisTemplate.expire(wordRedisKeys.get(i), expireDuration, TimeUnit.MINUTES);
             }
         }
         return indexs;
