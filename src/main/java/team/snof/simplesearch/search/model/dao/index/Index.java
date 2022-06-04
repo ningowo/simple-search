@@ -2,7 +2,6 @@ package team.snof.simplesearch.search.model.dao.index;
 
 import lombok.Data;
 import team.snof.simplesearch.search.model.dao.doc.DocInfo;
-
 import java.util.List;
 
 @Data

@@ -19,18 +19,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class CSVFileReader {
     // 默认的文件读取根目录
-    private static final String workDir = System.getProperty("user.dir");
-    private static final String FILE_PATH = workDir + "\\data.csv";
+    private static final String PROJECT_ROOT = System.getProperty("user.dir");
+    private static final String DEFAULT_FILE_PATH = PROJECT_ROOT + "\\data.csv";
     private static final Integer HEADER_OFFSET = 2;   // 头两行是标题，需要跳过
 
-    // 用于控制文件读取位置的参数
-    public static AtomicInteger count;
-
-
     // 线程池参数
-    // IO密集型的线程数是cpu加一，我感觉十个有点多？
-    private static final int CORE_POOL_SIZE = 1;
-    private static final int MAXIMUM_POOL_SIZE = 5;
+    private static final int CORE_POOL_SIZE = 8;
+    private static final int MAXIMUM_POOL_SIZE = 10;
     private static final long KEEP_ALIVE_TIME = 30;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
     private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(
@@ -38,13 +33,13 @@ public class CSVFileReader {
             MAXIMUM_POOL_SIZE,
             KEEP_ALIVE_TIME,
             TIME_UNIT,
-            new ArrayBlockingQueue<>(5, false)); // 这里1000肯定太多了
+            new ArrayBlockingQueue<>(10, false));
 
     /**
      * 从默认的路径读取文件
      */
     public static List<Doc> readDefault() {
-        return readFile(FILE_PATH);
+        return readFile(DEFAULT_FILE_PATH);
     }
 
     /**
@@ -71,12 +66,14 @@ public class CSVFileReader {
         return docs;
     }
 
+
     public static Map<String, List<Doc>> parallelReadFiles(List<String> filePathList) throws InterruptedException {
         return parallelReadFiles("", filePathList);
     }
 
     /**
      * 多线程读取，适用于多个小文件
+     *
      * @param filePathList 文件路径列表
      * @return [Key:文件名，Value:对应文件内的数据列表]
      */
@@ -114,7 +111,7 @@ public class CSVFileReader {
         countDownLatch.await();
 
         // 获取读取结果
-        for (Map.Entry<String, Future<List<Doc>>> entry: futureMap.entrySet()) {
+        for (Map.Entry<String, Future<List<Doc>>> entry : futureMap.entrySet()) {
             try {
                 fileListToDocListsMap.put(entry.getKey(), entry.getValue().get());
             } catch (ExecutionException e) {

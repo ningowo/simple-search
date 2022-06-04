@@ -64,7 +64,7 @@ public class IndexBuilder {
 
             // 每条记录内部需要对list中的每一项计算corr，并生成索引的docInfoList
             List<DocInfo> docInfoList = new ArrayList<>();
-            for (TempData tempData : indexPartial.tempDataList){
+            for (TempData tempData : indexPartial.tempDataList) {
                 BigDecimal corr = calculateCorr(word, wordWeightMap, tempData);
                 DocInfo docInfo = new DocInfo(tempData.getDocId(), corr);
                 docInfoList.add(docInfo);
@@ -83,12 +83,13 @@ public class IndexBuilder {
         }
 
         // MongoDB层实现一下
-        indexStorage.batchSaveIndex(indexList);
+        indexStorage.saveBatch(indexList);
     }
 
     /**
      * 对word_temp的单条记录word-list计算关联度
      * corr = 分词权重 * 分词文档关联度
+     *
      * @param word
      * @param wordWeightMap
      * @param tempData
@@ -104,9 +105,9 @@ public class IndexBuilder {
 
         // 2. 分词文档关联度
         BigDecimal corr = wordWeight
-                        .multiply(BigDecimal.valueOf(wordFreq)
-                        .multiply(BigDecimal.valueOf(k_1+1))
-                        .divide(BigDecimal.valueOf((k_1*(1-b)) + b* (double) (docLen/docAveLen) + wordFreq))) ;
+                .multiply(BigDecimal.valueOf(wordFreq)
+                        .multiply(BigDecimal.valueOf(k_1 + 1))
+                        .divide(BigDecimal.valueOf((k_1 * (1 - b)) + b * (double) (docLen / docAveLen) + wordFreq)));
 
         return corr;
     }

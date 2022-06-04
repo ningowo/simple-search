@@ -9,9 +9,23 @@ import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.DocStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
+
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class DocParser {
+    private static final int CORE_POOL_SIZE = 10;
+    private static final int MAXIMUM_POOL_SIZE = 10;
+    private static final long KEEP_ALIVE_TIME = 30;
+    private ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            CORE_POOL_SIZE,
+            MAXIMUM_POOL_SIZE,
+            KEEP_ALIVE_TIME,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(1000, false));
+
     @Autowired
     WordSegmentation segmentation;
     @Autowired
