@@ -25,10 +25,5 @@ public class IKAnalyzerUtil {
         }
         return map;
     }
-
-//    public static void main(String[] args) throws IOException {
-//        List<String> list = new ArrayList<>();
-//        Map<String, Integer> analyze = IKAnalyzerUtil.analyze("字节跳动中华人民共和国合同法，字节跳动", list);
-//        System.out.println(analyze);
-//    }
+  
 }
