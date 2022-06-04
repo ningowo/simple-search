@@ -1,6 +1,6 @@
 package team.snof.simplesearch.user.service;
 
-import team.snof.simplesearch.common.exception.ResourceNotFoundException;
+import team.snof.simplesearch.user.exception.ResourceNotFoundException;
 import team.snof.simplesearch.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,7 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         // Let people login with either username or email
         User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                 .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found with username or email : " + usernameOrEmail)
+                        new UsernameNotFoundException("用户名或邮箱不存在: " + usernameOrEmail)
         );
 
         return UserPrincipal.create(user);

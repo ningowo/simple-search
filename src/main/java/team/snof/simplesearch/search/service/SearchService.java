@@ -1,25 +1,20 @@
 package team.snof.simplesearch.search.service;
 
-import io.swagger.models.auth.In;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundHashOperations;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
-import org.springframework.data.repository.query.ParameterOutOfBoundsException;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.common.util.IKAnalyzerUtil;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.engine.Engine;
-import team.snof.simplesearch.search.model.bo.CompleteResult;
 import team.snof.simplesearch.search.model.bo.CompleteResultWithRange;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.vo.DocVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 import team.snof.simplesearch.search.model.vo.SearchResponseVO;
-
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -39,10 +34,6 @@ public class SearchService {
     @Autowired
     WordSegmentation wordSegmentation;
 
-    @Autowired
-    IKAnalyzerUtil ikAnalyzerUtil;
-
-    // spring容器没启动的时候会爆红，没办法。直接用就行
     @Autowired
     private RedisTemplate redisTemplate;
 
@@ -113,7 +104,7 @@ public class SearchService {
 
         // 如缓存中没有该query
         // 分词
-        Map<String, Integer> segmentedWordMap = ikAnalyzerUtil.analyze(query, filterWordList);
+        Map<String, Integer> segmentedWordMap = wordSegmentation.segment(query, filterWordList);
 
         // 查询引擎
         CompleteResultWithRange engineResult = engine.rangeFind(segmentedWordMap, pageNum, pageSize);
@@ -160,7 +151,6 @@ public class SearchService {
                 .build();
     }
 
-    // 在src/test下开个test的类，不要写在实际的类里
     public String test() {
         redisTemplate.setValueSerializer(RedisSerializer.json());
         String key = "key1";
@@ -172,7 +162,6 @@ public class SearchService {
         doc.setCaption("qhwkjehqwkj");
         doc.setUrl("www.baidu.com");
 
-//        redisTemplate.opsForList().rightPushAll(key, value);
         redisTemplate.opsForValue().set("doc", doc);
         System.out.println(redisTemplate.opsForValue().get("doc"));
 

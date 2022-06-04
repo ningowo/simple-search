@@ -1,16 +1,17 @@
-package team.snof.simplesearch.common.exception;
+package team.snof.simplesearch.user.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class ResourceNotFoundException extends RuntimeException {
-    /**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 631368179465160152L;
+
 	private String resourceName;
+
     private String fieldName;
+
     private Object fieldValue;
 
     public ResourceNotFoundException( String resourceName, String fieldName, Object fieldValue) {

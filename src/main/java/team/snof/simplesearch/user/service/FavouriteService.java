@@ -73,7 +73,6 @@ public class FavouriteService {
     public Object showFavourites(Integer userId) {
         List<Favourite> favouriteList = favouriteMapper.selectList(new QueryWrapper<Favourite>().lambda()
                 .eq(Favourite::getUserId, userId));
-//        System.out.println(favouriteList);
         return favouriteList;
     }
 

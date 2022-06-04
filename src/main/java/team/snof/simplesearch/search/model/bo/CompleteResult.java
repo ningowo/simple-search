@@ -7,7 +7,11 @@ import java.util.List;
 
 @Data
 public class CompleteResult {
+
     List<Doc> totalDocs;
+
     List<Long> totalDocIds;
+
     List<String> relatedSearch;
+
 }

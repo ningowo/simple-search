@@ -1,6 +1,6 @@
 package team.snof.simplesearch.user.controller;
 
-import team.snof.simplesearch.common.exception.AppException;
+import team.snof.simplesearch.user.exception.AppException;
 import team.snof.simplesearch.user.model.bo.favorite.Role;
 import team.snof.simplesearch.user.model.bo.favorite.RoleName;
 import team.snof.simplesearch.user.model.vo.ApiResponse;

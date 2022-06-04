@@ -1,6 +1,6 @@
 package team.snof.simplesearch.user.controller;
 
-import team.snof.simplesearch.common.exception.ResourceNotFoundException;
+import team.snof.simplesearch.user.exception.ResourceNotFoundException;
 import team.snof.simplesearch.user.model.vo.UserIdentityAvailability;
 import team.snof.simplesearch.user.model.vo.UserProfile;
 import team.snof.simplesearch.user.model.vo.UserSummary;
