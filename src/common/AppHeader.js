@@ -2,16 +2,24 @@ import React, { Component } from "react";
 import { Link, withRouter } from "react-router-dom";
 import "./AppHeader.css";
 import "antd/dist/antd.css";
-import { Layout, Menu, Dropdown, Icon, Input,Button } from "antd";
+import { Layout, Menu, Dropdown, Icon, Input, Button } from "antd";
 const Header = Layout.Header;
-
 class AppHeader extends Component {
   constructor(props) {
     super(props);
+    this.state = {
+      userKey: "/init",
+    };
     this.handleMenuClick = this.handleMenuClick.bind(this);
   }
 
   handleMenuClick({ key }) {
+    if (key === "collect") {
+      console.log("collect");
+      this.setState({
+        userKey:"/collect"
+      });
+    }
     if (key === "logout") {
       this.props.onLogout();
     }
@@ -21,12 +29,12 @@ class AppHeader extends Component {
     let menuItems;
     if (this.props.currentUser) {
       menuItems = [
-        <Menu.Item key="/">
+        <Menu.Item key="/accessHome">
           <Link to={`/accessHome/${this.props.currentUser.username}`}>
             <Icon type="home" className="nav-icon" />
           </Link>
         </Menu.Item>,
-        <Menu.Item key="/profile" className="profile-menu">
+        <Menu.Item key={this.userKey} className="profile-menu">
           <ProfileDropdownMenu
             currentUser={this.props.currentUser}
             handleMenuClick={this.handleMenuClick}
@@ -48,20 +56,23 @@ class AppHeader extends Component {
     };
     return (
       <Header className="app-header">
-        <div className="container">
-          <div className="app-title">
-            <Link to="/">Login App</Link>
-          </div>
-          <div className="app-content">
-            <Input.Group compact className="header-search">
-              <Input
-                style={{ width: "calc(60%)" }}
-                defaultValue="search"
-              />
-              <Link to="/search"><Button type="primary" onClick={onSearch}>搜索</Button></Link>
-            </Input.Group>
-          </div>
-          <Menu theme="dark"
+        <div className="app-title">
+          <Link to="/">Search App</Link>
+        </div>
+
+        <div className="search-content">
+          <Input.Group compact className="header-search">
+            <Input style={{ width: "calc(60%)" }} defaultValue="search" />
+            <Link to="/search">
+              <Button type="primary" onClick={onSearch}>
+                搜索
+              </Button>
+            </Link>
+          </Input.Group>
+        </div>
+        <div className="app-menu">
+          <Menu
+            theme="dark"
             className="app-menu"
             mode="horizontal"
             selectedKeys={[this.props.location.pathname]}
@@ -76,21 +87,24 @@ class AppHeader extends Component {
 }
 
 function ProfileDropdownMenu(props) {
-  const dropdownMenu = (
-    <Menu onClick={props.handleMenuClick} className="profile-dropdown-menu">
-      <Menu.Item key="user-info" className="dropdown-item" disabled>
-        <div className="user-full-name-info">{props.currentUser.name}</div>
-        <div className="username-info">@{props.currentUser.username}</div>
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="profile" className="dropdown-item">
-        <Link to={`/users/${props.currentUser.username}`}>Profile</Link>
-      </Menu.Item>
-      <Menu.Item key="logout" className="dropdown-item">
-        Logout
-      </Menu.Item>
-    </Menu>
-  );
+    const dropdownMenu = (
+      <Menu onClick={props.handleMenuClick} className="profile-dropdown-menu">
+        <Menu.Item key="user-info" className="dropdown-item" disabled>
+          <div className="user-full-name-info">{props.currentUser.name}</div>
+          <div className="username-info">@{props.currentUser.username}</div>
+        </Menu.Item>
+        <Menu.Divider />
+        <Menu.Item key="profile" className="dropdown-item">
+          <Link to={`/users/${props.currentUser.username}`}>Profile</Link>
+        </Menu.Item>
+        <Menu.Item key="collect" className="dropdown-item">
+          <Link to="/collect">Collect</Link>
+        </Menu.Item>
+        <Menu.Item key="logout" className="dropdown-item">
+          Logout
+        </Menu.Item>
+      </Menu>
+    );
 
   return (
     <Dropdown

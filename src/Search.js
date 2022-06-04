@@ -1,7 +1,8 @@
-import React, { Component, useState } from "react";
-import { Radio, Row, Card, Col } from "antd";
+import React, { Component } from "react";
+import { Radio, Row, Card, Col, Pagination } from "antd";
 import Text from "./components/Text";
 import "./App.css";
+import Related from "./components/related";
 class Search extends Component {
   constructor(props) {
     super(props);
@@ -23,7 +24,7 @@ class Search extends Component {
       { label: "图片", value: "pic" },
     ];
     return (
-      <div style={{ marginTop: 60 }}>
+      <div>
         <h1>Result</h1>
         <Radio.Group
           options={options}
@@ -39,7 +40,7 @@ class Search extends Component {
         </div>
 
         <Row gutter={16} center="lg" hidden={this.state.searchOpt === "text"}>
-          <Col span={8}>
+          <Col lg={{ span: 6, offset: 2 }} xs={{ span: 11, offset: 1 }}>
             <Card
               hoverable
               style={{ width: 240 }}
@@ -52,6 +53,10 @@ class Search extends Component {
             ></Card>
           </Col>
         </Row>
+        <Related />
+        <div className="example">
+          <Pagination defaultCurrent={1} total={50} showSizeChanger />
+        </div>
       </div>
     );
   }

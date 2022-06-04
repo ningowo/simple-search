@@ -1,6 +1,5 @@
 import React from "react";
-import { Avatar, Comment } from "antd";
-
+import { Avatar} from "antd";
 
 function Text() {
   const data = [

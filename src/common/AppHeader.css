@@ -1,5 +1,6 @@
 .app-title {
     float: left;
+    margin-left: 2%;
   }
   
   .app-title a {
@@ -19,10 +20,12 @@
     box-shadow: 0 2px 8px #f0f1f2;
     z-index: 10;
     padding: 0;
+    
   }
   
   .app-menu {
     float: right;
+    height: 40px;
   }
   
   .app-menu > li {
@@ -69,7 +72,7 @@
   .poll-icon {
     margin-top: -4px;
   }
-  .app-content{
+  .search-content{
     width: 50%;
     margin-left: 2%;
     float: left;
@@ -83,14 +86,27 @@
   .app-title a {
     font-size: 20px;
   }
-
   .app-menu > li {
     padding: 0 15px;
   }
-
+  .search-content{
+    width: 10%;
+    position:relative;
+    margin: 0 auto;
+  }
+  .header-search{
+    position: fixed;
+    top: 64px;
+    margin-left: -100px;
+    width: calc(80%);
+    margin-bottom: 20px;
+  }
   .app-menu > li > a {
     padding: 0 15px;
     margin: 0 -15px;
+  }
+  .app-header{
+    height: 64px;
   }
 }  
 

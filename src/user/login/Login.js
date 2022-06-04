@@ -38,7 +38,6 @@ class LoginForm extends Component {
             if (!err) {
                 console.log(values)
                 const loginRequest = Object.assign({}, values);
-                console.log(loginRequest)
                 login(loginRequest)
                 .then(response => {
                     localStorage.setItem(ACCESS_TOKEN, response.accessToken);
@@ -46,12 +45,12 @@ class LoginForm extends Component {
                 }).catch(error => {
                     if(error.status === 401) {
                         notification.error({
-                            message: 'Login App',
+                            message: 'Search App',
                             description: 'Your Username or Password is incorrect. Please try again!'
                         });                    
                     } else {
                         notification.error({
-                            message: 'Login App',
+                            message: 'Search App',
                             description: error.message || 'Sorry! Something went wrong. Please try again!'
                         });                                            
                     }

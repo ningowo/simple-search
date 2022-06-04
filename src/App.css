@@ -1,3 +1,4 @@
+
 .App {
   text-align: center;
 }
@@ -25,9 +26,28 @@
 .App-content {
   padding-top: 10%;
   text-align: center;
+  min-width: 650px;
+  
 }
 
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.header{
+ /* 我们希望 header 采用固定的高度，只占用必须的空间 */
+ /* 0 flex-grow, 0 flex-shrink, auto flex-basis */
+ flex: 0 0 auto;
+}
+
+.foot {
+   /* 和 header 一样，footer 也采用固定高度*/
+  flex:0 0 auto;
+}	

@@ -3,10 +3,12 @@ body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
+  min-width: 650x;
 }
-
+html {
+  min-width: 650x;
+}
 .content{
-  max-width: 1200px;
   margin: 0 auto;
 }
 .contianer{
@@ -23,11 +25,11 @@ body {
 }
 .blank{
   width: 100%;
-  height: 150px;
+  height: 550px;
   background-color: white;
-  position: fixed;
+  position: relative;
   z-index: 1;
-  margin-top: 50px;
+  margin-top: 100px;
 }
 .btn{
   color: #fff;
@@ -55,6 +57,10 @@ body {
   width:150px;
   height:150px;
   margin:0px auto;
+  position: fixed;
+  left: 50%;
+  top: 160px;
+  margin-left: -75px;
   padding:8px;
   border-radius:75px;
 }
@@ -64,4 +70,8 @@ body {
   background-repeat:no-repeat;
   overflow:hidden;
   border-radius: inherit;
+}
+.example{
+  margin: 0 auto;
+  padding: 2%;
 }

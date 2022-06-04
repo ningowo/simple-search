@@ -4,7 +4,6 @@ import LoadingIndicator from "./common/LoadingIndicator";
 import NotFound from "./common/NotFound";
 import ServerError from "./common/ServerError";
 import CheckAuthentication from "./common/CheckAuthentication";
-import {Input } from "antd";
 class LoginHome extends Component {
   constructor(props) {
     super(props);
@@ -13,9 +12,9 @@ class LoginHome extends Component {
       isLoading: false,
     };
   }
-onSearch=()=>{
-  console.log("search")
-}
+  onSearch = () => {
+    console.log("search");
+  };
   loadUserProfile = (username) => {
     const _this = this;
     if (this.props.username !== null) {
@@ -75,7 +74,10 @@ onSearch=()=>{
 
     return (
       <div className="App-content">
-        {this.state.user ? <div>login access home</div> : null}
+        {this.state.user ? <div>
+          hello
+          login access home</div>
+           : null}
       </div>
     );
   }
