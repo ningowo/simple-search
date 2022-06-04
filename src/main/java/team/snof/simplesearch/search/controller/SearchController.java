@@ -9,10 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import team.snof.simplesearch.search.model.vo.ResultVO;
-import team.snof.simplesearch.search.model.vo.SearchListResponseVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
-import team.snof.simplesearch.search.service.SearchService;;import java.util.ArrayList;
-import java.util.List;
+import team.snof.simplesearch.search.service.SearchService;;
 
 @Api("搜索接口")
 @RestController()
@@ -26,9 +24,13 @@ public class SearchController {
     private RedisTemplate redisTemplate;
 
 
-    @RequestMapping(value = "/s", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET)
     @ApiOperation("搜索接口")
-    public ResultVO<SearchListResponseVO> search(@RequestBody SearchRequestVO request) {
+    public ResultVO search(@RequestBody SearchRequestVO request) {
+
+        if (request.getQuery().isBlank()) {
+            return ResultVO.newParamErrorResult("查询参数不能为空！");
+        }
 
         return ResultVO.newSuccessResult(searchService.search(request));
     }

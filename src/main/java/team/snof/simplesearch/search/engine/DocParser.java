@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import team.snof.simplesearch.common.util.CSVFileReader;
 import team.snof.simplesearch.common.util.SnowflakeIdGenerator;
 import team.snof.simplesearch.common.util.WordSegmentation;
+import team.snof.simplesearch.search.engine.storage.DocStorage;
+import team.snof.simplesearch.search.engine.storage.IndexStorage;
+import team.snof.simplesearch.search.engine.storage.MetaDataStorage;
 import team.snof.simplesearch.search.model.bo.BM25ParseDocResult;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.index.Index;
@@ -14,10 +17,19 @@ import java.util.List;
 import java.util.concurrent.*;
 
 public class DocParser {
-
     private static long docNum = 0;
-
     private static long docTotalLength;
+    private static final int FILE_NUM = 256;   // 文件数目
+    private static final int CORE_POOL_SIZE = 10;
+    private static final int MAXIMUM_POOL_SIZE = 10;
+    private static final long KEEP_ALIVE_TIME = 30;
+    private static final int freq = CSVFileReader.READ_SUM / CSVFileReader.READ_NUM;    // 一个文件需要读的次数
+    private ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            CORE_POOL_SIZE,
+            MAXIMUM_POOL_SIZE,
+            KEEP_ALIVE_TIME,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(1000, false));
 
     @Autowired
     WordSegmentation segmentation;
@@ -26,53 +38,82 @@ public class DocParser {
     @Autowired
     DocStorage docStorage;
     @Autowired
+    MetaDataStorage metaDataStorage;
+    @Autowired
     SnowflakeIdGenerator snowflakeIdGenerator;
 
-
-    private ThreadPoolExecutor executor = new ThreadPoolExecutor(4, 5, 30,
-            TimeUnit.SECONDS, new ArrayBlockingQueue<>(20, false));
-
     public static void main(String[] args) {
-        // 从csv文件获取Doc
-        List<Doc> docList = CSVFileReader.readDocsFromCSV("");
+        readOneTime();
+    }
 
+    /**
+     * 一次性读取
+     */
+    private static void readOneTime() {
+        String fileName = "";
+        List<Doc> docList = CSVFileReader.readDocsFromCSV(fileName);
         // 解析并存储索引和文件
         DocParser docParser = new DocParser();
         docParser.parse(docList);
     }
 
-    private void parse(List<Doc> docList) {
-        List<Future<String>> resultList = new ArrayList<Future<String>>();
+    /**
+     * 分批读取
+     */
+    private static void readPartial() {
+        String parPath = "";
+        for (int i = 0; i < FILE_NUM; i++) {
+            String fileName = parPath + "wukong_100m_" + i + ".csv";
+            // 读每个文件之前都初始化CSVFileReader
+            CSVFileReader.init();
+            for (int j = 0; j < freq; j++) {
+                // 从csv文件获取Doc，每次读1000条，然后多线程解析
+                List<Doc> docList = CSVFileReader.readDocsFromCSV(fileName);
+                // 解析并存储索引和文件
+                DocParser docParser = new DocParser();
+                docParser.parse(docList);
+            }
+        }
+    }
 
+    private void parse(List<Doc> docList) {
+        List<Future<List<Index>>> resultList = new ArrayList<>();
         // 多线程解析doc，并获得索引所需参数
-        for (Doc doc : docList) {
-            Future<String> future = executor.submit(new Callable<String>() {
+        for(Doc doc : docList) {
+            Future<List<Index>> future = executor.submit(new Callable<List<Index>>() {
                 @Override
-                public String call() throws Exception {
-                    return parseDoc("");
+                public List<Index> call() throws Exception {
+                    // 设置doc的唯一id
+                    Long snowId = snowflakeIdGenerator.generate();
+                    doc.setSnowflakeDocId(snowId);
+                    // 将doc存入数据库
+                    docStorage.saveDoc(doc);
+                    // 修改总文档信息
+                    metaDataStorage.addDoc(doc);
+                    // 解析doc
+                    return parseDoc(doc.getCaption());
                 }
             });
-            resultList.add(future);
         }
 
-        // TODO 事务，重试，再考虑一下实现方式
-        // 构建以及存储索引
-        for (int i = 0; i < resultList.size(); i++) {
-            Long snowid = snowflakeIdGenerator.generate();
+        // 通过res.get()方法阻塞主线程，直到解析完成，获取结果
+        for (Future<List<Index>> res : resultList) {
+            List<Index> indices = null;
+            try {
+                indices = res.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
 
-            Index index = buildIndex();
-            indexStorage.saveIndex(index);
-
-            IndexPartial indexPartial = buildIndexPartial("");
-            indexStorage.saveIndexPartial(indexPartial);
-
-            docStorage.saveDoc(new Doc());
         }
 
+        Index index = buildIndex();
+        indexStorage.save(index);
     }
 
     // 看看怎么实现?
-    private void buildIndexAndIndexPartial() {}
+    private void buildIndexAndIndexPartial() {
+    }
 
 
     private IndexPartial buildIndexPartial(String parseResult) {
@@ -84,17 +125,14 @@ public class DocParser {
     }
 
 
-    public String parseDoc(String docCaption) {
+    public List<Index> parseDoc(String docCaption) {
         BM25ParseDocResult bm25ParseDocResult = BM25ParseDocResult.builder().build();
 
         // 分词接口
-        segmentation.segment("文档里的内容");
-
-        // 逻辑
-        // docCaption balabala
+        List<String> terms = segmentation.segment(docCaption);
 
 
-        return "";
+        return null;
     }
 
 }
