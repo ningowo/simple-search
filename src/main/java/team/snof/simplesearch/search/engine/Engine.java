@@ -14,14 +14,14 @@ import java.util.Map;
 public interface Engine {
 
     // 整体结果查询
-    SearchResponseVO find(Map<String, Integer> wordToFreqMap);
+    CompleteResult find(Map<String, Integer> wordToFreqMap);
 
-    SearchResponseVO rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit);
+    CompleteResultWithRange rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit);
 
     // 文档查询
     Doc findDoc(Long docId);
 
-    List<DocVO> batchFindDocs(List<Long> docIds); // 常用
+    List<Doc> batchFindDocs(List<Long> docIds); // 常用
 
     // 索引查询
     Index findIndex(String word);
