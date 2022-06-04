@@ -9,8 +9,8 @@ import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import team.snof.simplesearch.user.repository.RoleRepository;
-import team.snof.simplesearch.search.model.bo.favorite.Role;
-import team.snof.simplesearch.search.model.bo.favorite.RoleName;
+import team.snof.simplesearch.user.model.bo.favorite.Role;
+import team.snof.simplesearch.user.model.bo.favorite.RoleName;
 
 import javax.annotation.PostConstruct;
 import java.util.TimeZone;

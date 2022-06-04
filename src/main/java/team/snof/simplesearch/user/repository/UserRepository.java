@@ -2,7 +2,7 @@ package team.snof.simplesearch.user.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import team.snof.simplesearch.search.model.bo.favorite.User;
+import team.snof.simplesearch.user.model.bo.favorite.User;
 
 import java.util.List;
 import java.util.Optional;
