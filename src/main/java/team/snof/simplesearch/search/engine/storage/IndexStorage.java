@@ -33,10 +33,8 @@ public class IndexStorage {
         mongoTemplate.save(index);
     }
 
-    public void save(List<Index> indices) {
-        for(Index index : indices) {
-            save(index);
-        }
+    public void saveBatch(List<Index> indices) {
+        mongoTemplate.insert(indices, Index.class);
     }
 
     public Long deleteByKey(String key) {

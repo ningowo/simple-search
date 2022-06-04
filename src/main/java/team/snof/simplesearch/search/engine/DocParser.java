@@ -6,7 +6,6 @@ import team.snof.simplesearch.common.util.SnowflakeIdGenerator;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.engine.storage.DocStorage;
 import team.snof.simplesearch.search.engine.storage.IndexStorage;
-import team.snof.simplesearch.search.engine.storage.MetaDataStorage;
 import team.snof.simplesearch.search.model.bo.BM25ParseDocResult;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.index.Index;
@@ -34,31 +33,27 @@ public class DocParser {
     @Autowired
     DocStorage docStorage;
     @Autowired
-    MetaDataStorage metaDataStorage;
-    @Autowired
     SnowflakeIdGenerator snowflakeIdGenerator;
 
     public static void main(String[] args) {
         String filePath = "";
-        List<Doc> docs = CSVFileReader.read(filePath);
+        List<Doc> docs = CSVFileReader.readFile(filePath);
         DocParser docParser = new DocParser();
+        // 存入数据库
+        // docParser.docStorage.saveBatch(docs);
         docParser.parse(docs);
     }
 
     private void parse(List<Doc> docList) {
         List<Future<List<Index>>> resList = new ArrayList<>();
         // 多线程解析doc，并获得索引所需参数
-        for(Doc doc : docList) {
+        for (Doc doc : docList) {
             Future<List<Index>> future = executor.submit(new Callable<List<Index>>() {
                 @Override
                 public List<Index> call() throws Exception {
                     // 设置doc的唯一id
                     Long snowId = snowflakeIdGenerator.generate();
                     doc.setSnowflakeDocId(snowId);
-                    // 将doc存入数据库
-                    docStorage.save(doc);
-                    // 修改总文档信息
-                    metaDataStorage.addDoc(doc);
                     // 解析doc
                     return parseDoc(doc.getCaption());
                 }
@@ -74,7 +69,7 @@ public class DocParser {
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
-            indexStorage.save(indices);
+            indexStorage.saveBatch(indices);
         }
     }
 

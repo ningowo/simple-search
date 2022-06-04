@@ -5,6 +5,7 @@ import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -28,10 +29,8 @@ public class DocStorage {
         return mongoTemplate.find(query, Doc.class);
     }
 
-    public void save(List<Doc> docs) {
-        for(Doc doc : docs) {
-            save(doc);
-        }
+    public void saveBatch(List<Doc> docs) {
+        mongoTemplate.insert(docs, Doc.class);
     }
 
     public void save(Doc doc) {

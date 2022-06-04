@@ -10,6 +10,8 @@ import team.snof.simplesearch.search.model.dao.index.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 @SpringBootTest
@@ -34,8 +36,16 @@ public class IndexTest {
     }
 
     @Test
+    void insertBatch() {
+        List<Index> indices = new ArrayList<>();
+        indices.add(new Index("1", new ArrayList<>()));
+        indices.add(new Index("2", new ArrayList<>()));
+        indexStorage.saveBatch(indices);
+    }
+
+    @Test
     void deleteIndexTest() {
-        String key = "苹果";
+        String key = "2";
         Long num = indexStorage.deleteByKey(key);
         System.out.println(num);
     }

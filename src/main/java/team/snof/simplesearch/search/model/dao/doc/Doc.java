@@ -1,11 +1,13 @@
 package team.snof.simplesearch.search.model.dao.doc;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Doc {
 
     public Long SnowflakeDocId;

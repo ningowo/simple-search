@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocMetaData {
-    private Long docNum;    // 文档总数目
-    private Long docLen;    // 文档总长度
-    private Long avgLen;    // 文档的平均长度
+    private Long docId;
+    private Long docLen;
 }

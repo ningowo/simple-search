@@ -16,11 +16,4 @@ import java.util.List;
 public class ReadCSVTest {
     @Autowired
     DocStorage docStorage;
-
-    @Test
-    public void readCsvTest() {
-        List<Doc> docs = CSVFileReader.read();
-        HashSet<Doc> set = new HashSet<>(docs);
-        System.out.println(set.size());
-    }
 }
