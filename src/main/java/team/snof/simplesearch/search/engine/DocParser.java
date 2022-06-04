@@ -3,10 +3,8 @@ package team.snof.simplesearch.search.engine;
 import org.springframework.beans.factory.annotation.Autowired;
 import team.snof.simplesearch.common.util.SnowflakeIdGenerator;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.search.model.bo.BM25ParseDocResult;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
-import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.DocStorage;
@@ -68,15 +66,9 @@ public class DocParser {
             IndexPartial indexPartial = new IndexPartial(entry.getKey(), docId, entry.getValue());
             indexPartialStorage.saveIndexPartial(indexPartial);
         }
-    }
 
-    public List<Index> parseDoc(String docCaption) {
-        BM25ParseDocResult bm25ParseDocResult = BM25ParseDocResult.builder().build();
-
-        // 分词接口
-        List<String> terms = segmentation.segment(docCaption);
-
-
-        return null;
+        // 储存文档
+        Doc doc = new Doc(docId, url, caption);
+        docStorage.saveDoc(doc);
     }
 }
