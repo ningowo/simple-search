@@ -50,13 +50,4 @@ public class IndexStorage {
         UpdateResult result = mongoTemplate.updateFirst(query, update, Index.class);
         return result.getModifiedCount();
     }
-
-    public void saveIndexPartial(IndexPartial indexPartial) {
-        try {
-            // 调用云存储或者本地存储
-        } catch (Exception e) {
-            log.error("");
-        }
-
-    }
 }

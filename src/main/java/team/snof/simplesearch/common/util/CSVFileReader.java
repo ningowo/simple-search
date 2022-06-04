@@ -19,13 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class CSVFileReader {
     // 默认的文件读取根目录
-    private static final String workDir = System.getProperty("user.dir");
-    private static final String FILE_PATH = workDir + "\\data.csv";
+    private static final String PROJECT_ROOT = System.getProperty("user.dir");
+    private static final String DEFAULT_FILE_PATH = PROJECT_ROOT + "\\data.csv";
     private static final Integer HEADER_OFFSET = 2;   // 头两行是标题，需要跳过
-
-    // 用于控制文件读取位置的参数
-    public static AtomicInteger count;
-
 
     // 线程池参数
     private static final int CORE_POOL_SIZE = 8;
@@ -43,7 +39,7 @@ public class CSVFileReader {
      * 从默认的路径读取文件
      */
     public static List<Doc> readDefault() {
-        return readFile(FILE_PATH);
+        return readFile(DEFAULT_FILE_PATH);
     }
 
     /**

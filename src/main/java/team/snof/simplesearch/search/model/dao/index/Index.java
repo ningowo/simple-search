@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class Index {
-    public String indexKey; // 分词
+    public String indexKey;
 
     public List<DocInfo> docInfoList;
 

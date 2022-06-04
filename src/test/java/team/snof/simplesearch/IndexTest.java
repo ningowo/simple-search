@@ -4,6 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Field;
+import org.springframework.data.mongodb.core.query.Query;
 import team.snof.simplesearch.search.engine.storage.DocStorage;
 import team.snof.simplesearch.search.engine.storage.IndexStorage;
 import team.snof.simplesearch.search.model.dao.index.DocInfo;
@@ -13,6 +16,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @SpringBootTest
 @Slf4j
@@ -21,6 +25,8 @@ public class IndexTest {
     DocStorage docStorage;
     @Autowired
     IndexStorage indexStorage;
+    @Autowired
+    MongoTemplate mongoTemplate;
 
     @Test
     void indexStorageTest() {
@@ -78,6 +84,18 @@ public class IndexTest {
         List<Index> byKey = indexStorage.findByKey(key);
         for(Index index : byKey) {
             System.out.println(index);
+        }
+    }
+
+    @Test
+    void findFieldsTest() {
+        Query query = new Query();
+        Field fields = query.fields();
+        fields.exclude("_id");
+        fields.include("indexKey");
+        List<Map> indices = mongoTemplate.find(query, Map.class, "word_temp");
+        for(Map map : indices) {
+            System.out.println(map.get("indexKey"));
         }
     }
 }
