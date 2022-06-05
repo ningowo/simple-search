@@ -1,13 +1,9 @@
 package team.snof.simplesearch.search.model.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
-import team.snof.simplesearch.search.model.bo.favorite.Dataset;
+import team.snof.simplesearch.user.model.bo.favorite.Dataset;
 
 /**
  * 

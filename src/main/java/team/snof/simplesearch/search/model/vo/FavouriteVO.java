@@ -3,7 +3,7 @@ package team.snof.simplesearch.search.model.vo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
-import team.snof.simplesearch.search.model.bo.favorite.Favourite;
+import team.snof.simplesearch.user.model.bo.favorite.Favourite;
 
 /**
  * 
