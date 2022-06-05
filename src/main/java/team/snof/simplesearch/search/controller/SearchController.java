@@ -23,9 +23,6 @@ public class SearchController {
     @Autowired
     SearchService searchService;
 
-    @Autowired
-    private RedisTemplate redisTemplate;
-
     @RequestMapping(value = "/", method = RequestMethod.GET)
     @ApiOperation("搜索接口")
     public ResultVO search(@RequestBody SearchRequestVO request) {

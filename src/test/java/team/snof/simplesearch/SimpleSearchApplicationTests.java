@@ -10,7 +10,6 @@ import team.snof.simplesearch.search.service.SearchService;
 @Slf4j
 class SimpleSearchApplicationTests {
 
-
     @Autowired
     private SearchService searchService;
 
@@ -21,7 +20,7 @@ class SimpleSearchApplicationTests {
 
     @Test
     void testRedis() {
-        searchService.test();
+        // searchService.test();
     }
 
 }
