@@ -1,27 +1,32 @@
 package team.snof.simplesearch.search.service;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.BoundHashOperations;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.common.util.IKAnalyzerUtil;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.engine.Engine;
+import team.snof.simplesearch.search.model.bo.CompleteResultWithRange;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.index.Index;
+import team.snof.simplesearch.search.model.vo.DocVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 import team.snof.simplesearch.search.model.vo.SearchResponseVO;
 
-
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class SearchService {
 
-    private static Integer DEFAULT_RES_SIZE = 30;
+    private static Integer DEFAULT_PAGE_SIZE = 30;
 
     @Autowired
     Engine engine;
@@ -30,67 +35,121 @@ public class SearchService {
     WordSegmentation wordSegmentation;
 
     @Autowired
-    IKAnalyzerUtil ikAnalyzerUtil;
-
-    // spring容器没启动的时候会爆红，没办法。直接用就行
-    @Autowired
     private RedisTemplate redisTemplate;
 
     public SearchResponseVO search(SearchRequestVO request) throws IOException {
-        SearchResponseVO res = new SearchResponseVO();
-
-        //设置redis对象的序列化方式
-        redisTemplate.setValueSerializer(RedisSerializer.json());
-
-        //获取过滤词列表
         List<String> filterWordList = request.getFilterWordList();
-        //获取待查询语句
         String query = request.getQuery();
-        //分页参数
         Integer pageNum = request.getPageNum();
         Integer pageSize = request.getPageSize();
 
-        // 接口以参考这个 https://blog.csdn.net/AlbenXie/article/details/109348114
-        BoundListOperations queryRes = redisTemplate.boundListOps(query);
-
-        //缓存中key存放query，value存放doc_id_list
-
-        //zyg：先查缓存，如果缓存命中
-
-        //判断缓存中是否存在的两个依据：
-        //  1.redis中是否存在该key
-        if (redisTemplate.hasKey(query)) {
-            List<Long> docIdList;
-            if (pageNum != null && pageSize != null) {
-                //如果分页参数小于待查询list的长度，正常执行查询；否则返回list的最后pageSize条
-                if (pageNum * pageSize < queryRes.size()) {
-                    docIdList = queryRes.range((pageNum - 1) * pageSize, pageNum * pageSize);
-                } else {
-                    docIdList = queryRes.range(queryRes.size() - pageSize, queryRes.size());
-                }
-            } else {
-                docIdList = queryRes.range(0, DEFAULT_RES_SIZE);
+        // 获取过滤词信息
+        List<Long> filterDocIds = new ArrayList<>();
+        if (!filterWordList.isEmpty()) {
+            // 获取过滤词对应索引
+            List<Index> indices = engine.batchFindIndexes(filterWordList);
+            // 从索引获取所有要过滤的docids
+            for (Index index : indices) {
+                List<Pair<Long, BigDecimal>> docIdAndCorrList = index.getDocIdAndCorrList();
+                List<Long> docIds = docIdAndCorrList.stream().map(Pair::getLeft).collect(Collectors.toList());
+                filterDocIds.addAll(docIds);
             }
-            res.setDocVOList(engine.batchFindDocs(docIdList));
-            return res;
         }
 
-        //zyg：如果缓存中没有该query，调用引擎层的查询接口，查到后并缓存
+        // 查询缓存
+        redisTemplate.setValueSerializer(RedisSerializer.json());
+        String queryCacheKey = "search:page:" + query + ":list";
+        String queryRelatedSearchKey = "search:related:" + query + ":list";;
 
-        // 分词 并 简单过滤
-        Map<String, Integer> segmentedWordMap = ikAnalyzerUtil.analyze(query, filterWordList);
-        SearchResponseVO responseVO;
-        if (pageNum != null && pageSize != null) {
-            responseVO = engine.rangeFind(segmentedWordMap, pageNum, pageSize);
-        } else  {
-            responseVO = engine.find(segmentedWordMap);
+        BoundListOperations queryCache = redisTemplate.boundListOps(queryCacheKey);
+        BoundHashOperations queryRelatedSearchCache = redisTemplate.boundHashOps(queryRelatedSearchKey);
+
+        // Redis缓存：key=query，value=doc_id_list
+        if (redisTemplate.hasKey(queryCacheKey)) {
+            List<Long> docIds;
+            if (pageNum == null || pageSize == null) {
+                pageNum = 1;
+                pageSize = DEFAULT_PAGE_SIZE;
+            }
+
+            // Redis的rlange左右都是闭区间
+            long start = (pageNum - 1) * pageSize;
+            long end = pageNum * pageSize - 1;
+
+            if (start < queryCache.size() - 1) {
+                throw new IllegalArgumentException("所查询的记录超出范围!");
+            }
+            end = Math.min(end, queryCache.size());
+
+            // 从缓存查询
+            docIds = queryCache.range(start, end);
+            List<String> relatedSearches = (List<String>) queryRelatedSearchCache.get(queryRelatedSearchKey);
+
+            // 过滤
+            if (!filterDocIds.isEmpty()) {
+                docIds = docIds.stream().filter(id -> filterDocIds.contains(id)).collect(Collectors.toList());
+            }
+
+            // 从引擎层获取doc
+            List<Doc> docList = engine.batchFindDocs(docIds);
+
+            // 准备DocVO
+            List<DocVO> docVOList = docList.stream().map(DocVO::buildDocVO).collect(Collectors.toList());
+
+            return SearchResponseVO.builder()
+                    .docVOList(docVOList)
+                    .relatedSearchList(relatedSearches)
+                    .build();
         }
-        //查到以后将doc_id存入缓存当中
-        queryRes.rightPush(responseVO.getDocIds());
-        return responseVO;
 
+        // 如缓存中没有该query
+        // 分词
+        Map<String, Integer> segmentedWordMap = wordSegmentation.segment(query, filterWordList);
+
+        // 查询引擎
+        CompleteResultWithRange engineResult = engine.rangeFind(segmentedWordMap, pageNum, pageSize);
+
+        // 更新缓存
+        queryCache.rightPush(engineResult.getTotalDocIds());
+
+        // 如为第一页不用重新去搜索引擎查找
+        if (pageNum == 1) {
+            List<Doc> firstPageDoc = engineResult.getDocs();
+            // 过滤
+            if (!filterDocIds.isEmpty()) {
+                firstPageDoc = firstPageDoc.stream()
+                        .filter(doc -> filterDocIds.contains(doc.getSnowflakeDocId()))
+                        .collect(Collectors.toList());
+            }
+
+            // 准备DocVO
+            List<DocVO> docVOList = firstPageDoc.stream().map(DocVO::buildDocVO).collect(Collectors.toList());
+
+            return SearchResponseVO.builder()
+                    .docVOList(docVOList)
+                    .relatedSearchList(engineResult.getRelatedSearch())
+                    .build();
+        }
+        
+        
+        // 如不为第一页需回表
+        List<Long> docIds = engineResult.getTotalDocIds();
+        
+        // 过滤
+        if (!filterDocIds.isEmpty()) {
+            docIds = docIds.stream().filter(id -> filterDocIds.contains(id)).collect(Collectors.toList());
+        }
+
+        List<Doc> docList = engine.batchFindDocs(docIds);
+
+        // 准备DocVO
+        List<DocVO> docVOList = docList.stream().map(DocVO::buildDocVO).collect(Collectors.toList());
+
+        return SearchResponseVO.builder()
+                .docVOList(docVOList)
+                .relatedSearchList(engineResult.getRelatedSearch())
+                .build();
     }
-
 
     public String test() {
         redisTemplate.setValueSerializer(RedisSerializer.json());
@@ -103,7 +162,6 @@ public class SearchService {
         doc.setCaption("qhwkjehqwkj");
         doc.setUrl("www.baidu.com");
 
-//        redisTemplate.opsForList().rightPushAll(key, value);
         redisTemplate.opsForValue().set("doc", doc);
         System.out.println(redisTemplate.opsForValue().get("doc"));
 

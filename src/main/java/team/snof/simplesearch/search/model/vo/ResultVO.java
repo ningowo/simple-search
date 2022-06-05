@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import static team.snof.simplesearch.search.model.vo.ResultVOConstants.*;
+import static team.snof.simplesearch.search.constant.ResultVOConstants.*;
 
 @Getter
 @Setter

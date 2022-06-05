@@ -5,10 +5,10 @@ import lombok.Data;
 @Data
 public class Doc {
 
-    public Long SnowflakeDocId;
+    private Long SnowflakeDocId;
 
-    public String url;
+    private String url;
 
-    public String caption;
+    private String caption;
 
 }
