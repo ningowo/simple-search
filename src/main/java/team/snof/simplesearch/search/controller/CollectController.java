@@ -1,10 +1,14 @@
 package team.snof.simplesearch.search.controller;
 
 import io.swagger.annotations.Api;
+import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import team.snof.simplesearch.search.model.vo.FavouriteVO;
 import team.snof.simplesearch.search.model.vo.ResultVO;
 import team.snof.simplesearch.search.service.FavouriteService;
+
+import javax.management.InstanceAlreadyExistsException;
 
 /**
  * @author zhouyg
@@ -21,7 +25,14 @@ public class CollectController {
 
     @PostMapping("/add")
     public ResultVO addFavourite(@RequestBody Integer userId, String favouriteName) {
-        return (ResultVO) favouriteService.addFavourite(userId, favouriteName);
+        if (favouriteName == null) return ResultVO.newParamErrorResult("收藏夹名称不可为空！");
+        FavouriteVO favouriteVO = null;
+        try {
+            favouriteVO = favouriteService.addFavourite(userId, favouriteName);
+        } catch (InstanceAlreadyExistsException e) {
+            e.printStackTrace();
+        }
+        return ResultVO.newSuccessResult(favouriteVO);
     }
 
     @PostMapping("/show")
@@ -31,27 +42,57 @@ public class CollectController {
 
     @PostMapping("/delete")
     public ResultVO deleteFavourite(@RequestBody Integer userId, String favouriteName) {
-        return (ResultVO) favouriteService.deleteFavourite(userId, favouriteName);
+        ResultVO resultVO = null;
+        try {
+            resultVO = favouriteService.deleteFavourite(userId, favouriteName);
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        }
+        return resultVO;
     }
 
     @PostMapping("/rename")
     public ResultVO renameFavourite(@RequestBody Integer userId, String originFavouriteName, String newFavouriteName) {
-        return (ResultVO) favouriteService.renameFavourite(userId, originFavouriteName, newFavouriteName);
+        if (originFavouriteName == null || newFavouriteName == null) return ResultVO.newParamErrorResult("收藏夹新名称不可为空！");
+        ResultVO resultVO = null;
+        try {
+            resultVO = favouriteService.renameFavourite(userId, originFavouriteName, newFavouriteName);
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        }
+        return resultVO;
     }
 
     @PostMapping("/article/show")
     public ResultVO showDataInFavourite(@RequestBody Integer favouriteId) {
-        return (ResultVO) favouriteService.showDataInFavourite(favouriteId);
+        if (favouriteId == null) return ResultVO.newParamErrorResult("请选中收藏夹");
+        return ResultVO.newSuccessResult(favouriteService.showDataInFavourite(favouriteId));
     }
 
     @PostMapping("/article/add")
     public ResultVO addDataToFavourite(@RequestBody Integer favouriteId, Integer dataId) {
-        return (ResultVO) favouriteService.addDataToFavourite(favouriteId, dataId);
+        if (favouriteId == null) return ResultVO.newParamErrorResult("请选中收藏夹后操作");
+        if (dataId == null) return ResultVO.newParamErrorResult("目标文档不得为空");
+        ResultVO resultVO = new ResultVO();
+        try {
+            resultVO = favouriteService.addDataToFavourite(favouriteId, dataId);
+        } catch (InstanceAlreadyExistsException e) {
+            e.printStackTrace();
+        }
+        return resultVO ;
     }
 
     @PostMapping("/article/delete")
     public ResultVO deleteDataFromFavourite(@RequestBody Integer favouriteId, Integer dataId) {
-        return (ResultVO) favouriteService.deleteDataFromFavourite(favouriteId, dataId);
+        if (favouriteId == null) return ResultVO.newParamErrorResult("请选中收藏夹后操作");
+        if (dataId == null) return ResultVO.newParamErrorResult("目标文档不得为空");
+        ResultVO resultVO = new ResultVO();
+        try {
+            resultVO = favouriteService.deleteDataFromFavourite(favouriteId, dataId);
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        }
+        return resultVO;
     }
 
 }
