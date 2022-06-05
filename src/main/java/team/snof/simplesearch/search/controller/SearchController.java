@@ -22,9 +22,6 @@ public class SearchController {
     @Autowired
     SearchService searchService;
 
-    @Autowired
-    private RedisTemplate redisTemplate;
-
 
     @RequestMapping(value = "/s", method = RequestMethod.GET)
     @ApiOperation("搜索接口")
