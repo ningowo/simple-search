@@ -1,14 +1,13 @@
 package team.snof.simplesearch.common.util;
 
-        import java.lang.management.ManagementFactory;
-        import java.net.InetAddress;
-        import java.net.NetworkInterface;
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 
 /**
  * @author czt
  */
 public class SnowflakeIdGenerator {
-
     private static SnowFlake snowFlake = null;
 
     static {
@@ -20,7 +19,7 @@ public class SnowflakeIdGenerator {
      *
      * @return long id
      */
-    public final static long generateSnowFlakeId() {
+    public final static long generate() {
         return snowFlake.nextId();
     }
 
