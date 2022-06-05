@@ -5,3 +5,5 @@ import lombok.Builder;
 @Builder
 public class BM25ParseDocResult {
 }
+
+
