@@ -68,9 +68,11 @@ public class FavouriteService {
             throw new NotFoundException("收藏夹不存在");
         }
         Favourite favourite = favouriteMapper.selectOne(queryFavourite);
+        //删除收藏夹
+        favouriteMapper.delete(queryFavourite);
         Wrapper<Collection> queryCollect = new QueryWrapper<Collection>().lambda()
                 .eq(Collection::getFavouriteId, favourite.getId());
-
+        //删除收藏夹内对应的记录
         collectionMapper.delete(queryCollect);
         return ResultVO.newSuccessResult("删除成功");
     }
