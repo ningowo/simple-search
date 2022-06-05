@@ -20,7 +20,7 @@ public class IndexGenerateRunner {
         // 获取地址列表
         String root = "D:/GoCamp/wukong_release/";
         File file = new File(root);
-        List<String> fileNameList = Arrays.asList(file.list());
+        List<String> fileNameList = List.of(file.list());
 
         // 从csv文件获取Doc
         for (String fileName: fileNameList) {
