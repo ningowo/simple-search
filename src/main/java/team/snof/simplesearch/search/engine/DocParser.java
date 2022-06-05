@@ -28,15 +28,19 @@ public class DocParser {
 
     @Autowired
     WordSegmentation segmentation;
+  
     @Autowired
     SnowflakeIdGenerator snowflakeIdGenerator;
+  
     @Autowired
     DocStorage docStorage;
+  
     @Autowired
     IndexPartialStorage indexPartialStorage;
+  
     @Autowired
     DocLenStorage docLenStorage;
-
+  
     // 解析doc，并获得索引所需参数
     public void parse(List<Doc> docList) {
         for (Doc doc : docList) {

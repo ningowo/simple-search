@@ -7,7 +7,8 @@ import java.net.NetworkInterface;
 /**
  * @author czt
  */
-public class SnowflakeIdGenerator {
+public class SnowFlakeIDGenerator {
+
     private static SnowFlake snowFlake = null;
 
     static {
@@ -19,7 +20,7 @@ public class SnowflakeIdGenerator {
      *
      * @return long id
      */
-    public final static long generate() {
+    public final static long generateSnowFlakeId() {
         return snowFlake.nextId();
     }
 
