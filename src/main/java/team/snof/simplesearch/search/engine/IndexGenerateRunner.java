@@ -19,13 +19,7 @@ public class IndexGenerateRunner {
     DocParser docParser;
 
     @Autowired
-    WordSegmentation wordSegmentation;
-
-    @Autowired
     IndexBuilder indexBuilder;
-
-    @Autowired
-    DocLenStorage docLenStorage;
 
     String tigerRoot = "D:/GoCamp/wukong_release/";
 
