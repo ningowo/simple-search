@@ -27,8 +27,12 @@ public class IndexBuilder {
     @Autowired
     DocLenStorage docLenStorage;
 
-    ThreadPoolExecutor executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 5, 30,
-            TimeUnit.SECONDS, new ArrayBlockingQueue<>(100, false));
+    ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            Runtime.getRuntime().availableProcessors(),
+            5,
+            30,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(100, false));
 
     // BM25算法常量定义
     private final double k_1 = 1.5;  // k1可取1.2--2

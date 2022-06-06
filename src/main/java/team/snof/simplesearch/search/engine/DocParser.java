@@ -69,6 +69,6 @@ public class DocParser {
 
         // 储存文档
         Doc doc = new Doc(docId, url, caption);
-        docStorage.saveDoc(doc);
+        docStorage.save(doc);
     }
 }
