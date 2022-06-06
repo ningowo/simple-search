@@ -1,16 +1,20 @@
 package team.snof.simplesearch.search.storage;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.stereotype.Component;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+@Slf4j
+@Component
 public class IndexPartialStorage {
 
     @Autowired
