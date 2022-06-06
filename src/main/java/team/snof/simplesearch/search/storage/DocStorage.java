@@ -13,6 +13,7 @@ import team.snof.simplesearch.search.model.dao.doc.Doc;
 
 import java.util.List;
 
+@Deprecated
 @Slf4j
 @Component
 public class DocStorage {

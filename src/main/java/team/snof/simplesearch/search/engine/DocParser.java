@@ -1,13 +1,18 @@
 package team.snof.simplesearch.search.engine;
 
+import io.swagger.models.auth.In;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import team.snof.simplesearch.common.util.IKAnalyzerUtil;
+import team.snof.simplesearch.common.util.OssUtil;
 import team.snof.simplesearch.common.util.SnowflakeIdGenerator;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
+import team.snof.simplesearch.search.model.dao.index.TempData;
 import team.snof.simplesearch.search.storage.DocLenStorage;
-import team.snof.simplesearch.search.storage.DocStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
 import java.util.*;
@@ -15,6 +20,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Component
 public class DocParser {
     private static final int CORE_POOL_SIZE = 10;
     private static final int MAXIMUM_POOL_SIZE = 10;
@@ -28,12 +34,9 @@ public class DocParser {
 
     @Autowired
     WordSegmentation segmentation;
-  
+
     @Autowired
     SnowflakeIdGenerator snowflakeIdGenerator;
-  
-    @Autowired
-    DocStorage docStorage;
   
     @Autowired
     IndexPartialStorage indexPartialStorage;
@@ -41,38 +44,46 @@ public class DocParser {
     @Autowired
     DocLenStorage docLenStorage;
   
+    @Autowired
+    OssUtil ossUtil;
+ 
+  
     // 解析doc，并获得索引所需参数
-    public void parse(List<Doc> docList) {
+    public void parse(List<Doc> docList) throws Exception{
         for (Doc doc : docList) {
-            long docId = snowflakeIdGenerator.generate();  // 调用雪花id生成doc_id 后面文档存储也要用这个id
+            long docId = snowflakeIdGenerator.generateSnowFlakeId();  // 调用雪花id生成doc_id 后面文档存储也要用这个id
             parseDoc(doc.getUrl(), doc.getCaption(), docId);
         }
     }
 
     // 解析每个doc中间参数存入word_temp表中
-    public void parseDoc(String url, String caption, long docId) {
-        // 对文档分词
-        List<String> wordList = segmentation.segment(caption);
+    public void parseDoc(String url, String caption, long docId) throws Exception{
+        /**
+         * 分词接口返回的是map <word, word_freq>
+         */
+        // 设置过滤词的list
+        List<String> filterWordList = new ArrayList<>();
+        // 分词在文档中词频
+        Map<String, Integer> wordToFreqMap = ikAnalyzerUtil.analyze(caption, filterWordList);
 
-        // 文档长度
-        long docLength = wordList.size();
+//      文档长度
+        long docLength = wordToFreqMap.size();
         // 储存文档长度到doc_length表  {doc_id, doc_len}
         DocLen docLen = new DocLen(docId, docLength);
         docLenStorage.save(docLen);
 
-        // 分词在文档中词频
-        HashMap<String, Long> wordToFreqMap = new HashMap<>();
-        for (String word : wordList) {
-            wordToFreqMap.put(word, wordToFreqMap.getOrDefault(word, 0L) + 1);
-        }
         // 储存分词对应的文档和词频 {word: {doc_id, word_freq}}
-        for (Map.Entry<String, Long> entry : wordToFreqMap.entrySet()) {
-            IndexPartial indexPartial = new IndexPartial(entry.getKey(), docId, entry.getValue());
+        for (Map.Entry<String, Integer> entry : wordToFreqMap.entrySet()) {
+            // 此处生成tempDatalist 传入构造方法
+            TempData tempData = new TempData(docId, entry.getValue());
+            List<TempData> tempDataList = new ArrayList<>();
+            tempDataList.add(tempData);
+            IndexPartial indexPartial = new IndexPartial(entry.getKey(), tempDataList);
             indexPartialStorage.saveIndexPartial(indexPartial);
         }
 
         // 储存文档
         Doc doc = new Doc(docId, url, caption);
-        docStorage.saveDoc(doc);
+        ossUtil.addDoc(doc);
     }
 }
