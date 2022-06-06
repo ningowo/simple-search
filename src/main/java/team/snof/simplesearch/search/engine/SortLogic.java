@@ -31,7 +31,7 @@ public  class SortLogic {
     private static final double k_3 = 1.5;  // k3  1.2~2
 
     //文档排序
-    public static List<Long> docSort(List<Index> indexs, HashMap<String, Integer> wordToFreqMap) {
+    public static List<Long> docSort(List<Index> indexs, Map<String, Integer> wordToFreqMap) {
         //1.计算文档对应的相似度
         HashMap<Long, BigDecimal> doc2Similarity = new HashMap<>();//kv <docID,similarity>
         for (Index index : indexs) {

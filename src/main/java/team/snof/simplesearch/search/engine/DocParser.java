@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.IKAnalyzerUtil;
 import team.snof.simplesearch.common.util.OssUtil;
-import team.snof.simplesearch.common.util.SnowflakeIdGenerator;
+import team.snof.simplesearch.common.util.SnowFlakeIDGenerator;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
@@ -33,10 +33,10 @@ public class DocParser {
             new ArrayBlockingQueue<>(1000, false));
 
     @Autowired
-    WordSegmentation segmentation;
+    IKAnalyzerUtil ikAnalyzerUtil;
 
     @Autowired
-    SnowflakeIdGenerator snowflakeIdGenerator;
+    SnowFlakeIDGenerator snowflakeIdGenerator;
   
     @Autowired
     IndexPartialStorage indexPartialStorage;
@@ -83,7 +83,7 @@ public class DocParser {
         }
 
         // 储存文档
-        Doc doc = new Doc(docId, url, caption);
+        Doc doc = new Doc(Long.valueOf(docId), url, caption);
         ossUtil.addDoc(doc);
     }
 }
