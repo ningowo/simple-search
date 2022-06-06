@@ -1,13 +1,10 @@
 package team.snof.simplesearch.search.engine;
 
-import io.swagger.models.auth.In;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.common.util.IKAnalyzerUtil;
+import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.common.util.OssUtil;
 import team.snof.simplesearch.common.util.SnowFlakeIDGenerator;
-import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
@@ -33,7 +30,7 @@ public class DocParser {
             new ArrayBlockingQueue<>(1000, false));
 
     @Autowired
-    IKAnalyzerUtil ikAnalyzerUtil;
+    WordSegmentation wordSegmentation;
 
     @Autowired
     SnowFlakeIDGenerator snowflakeIdGenerator;
@@ -64,7 +61,7 @@ public class DocParser {
         // 设置过滤词的list
         List<String> filterWordList = new ArrayList<>();
         // 分词在文档中词频
-        Map<String, Integer> wordToFreqMap = ikAnalyzerUtil.analyze(caption, filterWordList);
+        Map<String, Integer> wordToFreqMap = wordSegmentation.analyze(caption, filterWordList);
 
 //      文档长度
         long docLength = wordToFreqMap.size();
