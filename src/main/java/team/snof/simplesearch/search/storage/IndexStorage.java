@@ -20,7 +20,7 @@ public class IndexStorage {
     MongoTemplate mongoTemplate;
 
     public List<Index> findAll() {
-        return mongoTemplate.findAll(Index.class);
+        return mongoTemplate.findAll(Index.class, "word_docid_corr");
     }
 
     public List<Index> findByKey(String key) {
@@ -29,16 +29,16 @@ public class IndexStorage {
     }
 
     public void save(Index index) {
-        mongoTemplate.save(index);
+        mongoTemplate.save(index, "word_docid_corr");
     }
 
     public void saveBatch(List<Index> indices) {
-        mongoTemplate.insert(indices, Index.class);
+        mongoTemplate.insert(indices, "word_docid_corr");
     }
 
     public Long deleteByKey(String key) {
         Query query = new Query(Criteria.where("indexKey").is(key));
-        DeleteResult remove = mongoTemplate.remove(query, Index.class);
+        DeleteResult remove = mongoTemplate.remove(query, Index.class, "word_docid_corr");
         return remove.getDeletedCount();
     }
 
@@ -46,7 +46,7 @@ public class IndexStorage {
         Query query = new Query(Criteria.where("indexKey").is(key));
         Update update = new Update();
         update.set("docInfoList", index.getDocInfoList());
-        UpdateResult result = mongoTemplate.updateFirst(query, update, Index.class);
+        UpdateResult result = mongoTemplate.updateFirst(query, update, Index.class, "word_docid_corr");
         return result.getModifiedCount();
     }
 }

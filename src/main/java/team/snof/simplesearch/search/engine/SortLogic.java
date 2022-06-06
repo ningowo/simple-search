@@ -11,6 +11,7 @@ import team.snof.simplesearch.search.model.dao.doc.Word4Sort;
 import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -98,7 +99,7 @@ public  class SortLogic {
         return word2Num;
     }
 
-    private static String calRelatedSearch(Long docId){
+    private static String calRelatedSearch(Long docId) throws IOException {
         //1.对文档分词
         Doc doc = engineImpl.findDoc(docId);
         List<String> wordList = segmentation.segment(doc.getCaption());
