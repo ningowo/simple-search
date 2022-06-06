@@ -58,10 +58,8 @@ public class DocParser {
         /**
          * 分词接口返回的是map <word, word_freq>
          */
-        // 设置过滤词的list
-        List<String> filterWordList = new ArrayList<>();
         // 分词在文档中词频
-        Map<String, Integer> wordToFreqMap = wordSegmentation.analyze(caption, filterWordList);
+        Map<String, Integer> wordToFreqMap = wordSegmentation.segment(caption);
 
 //      文档长度
         long docLength = wordToFreqMap.size();
