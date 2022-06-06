@@ -33,16 +33,21 @@ public class DocParser {
             new ArrayBlockingQueue<>(1000, false));
 
     @Autowired
-    IKAnalyzerUtil ikAnalyzerUtil;
+    WordSegmentation segmentation;
+
     @Autowired
     SnowflakeIdGenerator snowflakeIdGenerator;
+  
     @Autowired
     IndexPartialStorage indexPartialStorage;
+  
     @Autowired
     DocLenStorage docLenStorage;
+  
     @Autowired
     OssUtil ossUtil;
-
+ 
+  
     // 解析doc，并获得索引所需参数
     public void parse(List<Doc> docList) throws Exception{
         for (Doc doc : docList) {
