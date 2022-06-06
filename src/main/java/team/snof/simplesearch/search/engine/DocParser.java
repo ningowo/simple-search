@@ -33,28 +33,22 @@ public class DocParser {
     WordSegmentation wordSegmentation;
 
     @Autowired
-    SnowFlakeIDGenerator snowflakeIdGenerator;
-  
-    @Autowired
     IndexPartialStorage indexPartialStorage;
-  
+
     @Autowired
     DocLenStorage docLenStorage;
-  
-    @Autowired
-    OssUtil ossUtil;
- 
-  
+
+
     // 解析doc，并获得索引所需参数
-    public void parse(List<Doc> docList) throws Exception{
+    public void parse(List<Doc> docList) throws Exception {
         for (Doc doc : docList) {
-            long docId = snowflakeIdGenerator.generateSnowFlakeId();  // 调用雪花id生成doc_id 后面文档存储也要用这个id
+            long docId = SnowFlakeIDGenerator.generateSnowFlakeId();  // 调用雪花id生成doc_id 后面文档存储也要用这个id
             parseDoc(doc.getUrl(), doc.getCaption(), docId);
         }
     }
 
     // 解析每个doc中间参数存入word_temp表中
-    public void parseDoc(String url, String caption, long docId) throws Exception{
+    public void parseDoc(String url, String caption, long docId) throws Exception {
         /**
          * 分词接口返回的是map <word, word_freq>
          */
@@ -78,7 +72,7 @@ public class DocParser {
         }
 
         // 储存文档
-        Doc doc = new Doc(Long.valueOf(docId), url, caption);
-        ossUtil.addDoc(doc);
+        Doc doc = new Doc(docId, url, caption);
+        OssUtil.addDoc(doc);
     }
 }

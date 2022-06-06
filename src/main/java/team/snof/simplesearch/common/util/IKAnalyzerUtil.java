@@ -10,7 +10,7 @@ import java.util.*;
 
 @Component
 public class IKAnalyzerUtil {
-    
+
     public Map<String, Integer> analyze(String msg, List<String> filterWords) throws IOException {
         StringReader sr = new StringReader(msg);
         IKSegmenter ik = new IKSegmenter(sr, true);
