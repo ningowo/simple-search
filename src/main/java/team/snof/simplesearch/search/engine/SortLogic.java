@@ -99,10 +99,12 @@ public  class SortLogic {
         return word2Num;
     }
 
-    private static String calRelatedSearch(Long docId) throws IOException {
-        //1.对文档分词
-        Doc doc = engineImpl.findDoc(docId);
-        List<String> wordList = segmentation.segment(doc.getCaption());
+    private static String calRelatedSearch(Long docId){
+        String result = new String();
+        try {
+            //1.对文档分词,并得到词频
+            Doc doc = engineImpl.findDoc(docId);
+            Map<String, Integer> word2Num = segmentation.segment(doc.getCaption());
 
         //2.判断IDF是否为空并计算IDF
         if(word2IDF.size() == 0){
@@ -110,24 +112,28 @@ public  class SortLogic {
             word2IDF = calIDF(docNum);
         }
 
-        //3.计算TF
-        HashMap<String,BigDecimal> word2Num = calTF(wordList);
+
 
         //4.根据TF-IDF计算关键字
         PriorityQueue<Word4Sort> topKeywords = new PriorityQueue<>();
-        for(String word: wordList){
-            BigDecimal tf_idf = word2Num.get(word).multiply(word2IDF.get(word));
+        for(String word: word2Num.keySet()){
+            BigDecimal tf_idf = BigDecimal.valueOf(word2Num.get(word)).multiply(word2IDF.get(word));
             if(topKeywords.size() < relatedKeywordNum || tf_idf.compareTo(topKeywords.peek().getTf_idf()) == 1){
                 topKeywords.remove(topKeywords.peek());
                 topKeywords.add(new Word4Sort(word,tf_idf));
             }
         }
 
-        String result = new String();
         for(Word4Sort word: topKeywords){
             result = result + word.getWord();
         }
 
-        return result;
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        finally {
+            return result;
+        }
     }
 }
