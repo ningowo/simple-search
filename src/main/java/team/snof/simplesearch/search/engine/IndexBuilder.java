@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.CollectionSpliter;
+import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
@@ -13,6 +14,7 @@ import team.snof.simplesearch.search.storage.IndexPartialStorage;
 import team.snof.simplesearch.search.storage.IndexStorage;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -25,22 +27,31 @@ public class IndexBuilder {
     IndexStorage indexStorage;
     @Autowired
     IndexPartialStorage indexPartialStorage;
-    @Autowired
-    DocLenStorage docLenStorage;
 
-    ThreadPoolExecutor executor;
+    private DocLenStorage docLenStorage;
+
+//    ThreadPoolExecutor executor;
 
     // BM25算法常量定义
     private final double k_1 = 1.5;  // k1可取1.2--2
     private final double b = 0.75;  // b取0.75
 
     // 计算文档平均长度与总文档数(全局变量 避免频繁查询）
-    long docAveLen = docLenStorage.getDocAveLen();
-    long docTotalNum = docLenStorage.getDocTotalNum();
+    long docAveLen;
+    long docTotalNum;
 
-    public IndexBuilder() {
-        executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 5, 30,
-                TimeUnit.SECONDS, new ArrayBlockingQueue<>(100, false));
+//    todo 多线程
+//    public IndexBuilder() {
+////        executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 5, 30,
+////                TimeUnit.SECONDS, new ArrayBlockingQueue<>(100, false));
+//
+//    }
+
+    @Autowired
+    public void setDocLenStorage(DocLenStorage docLenStorage){
+        this.docLenStorage = docLenStorage;
+        docAveLen = docLenStorage.getDocAveLen();
+        docTotalNum = docLenStorage.getDocTotalNum();
     }
 
     // 根据中间表构建索引
@@ -57,7 +68,8 @@ public class IndexBuilder {
 
         // 多线程进行解析和存储
         for (List<String> wordList : wordlistParts) {
-            executor.execute(() -> calcIndexAndSave(wordList, wordWeightMap));
+//            executor.execute(() -> calcIndexAndSave(wordList, wordWeightMap));
+            calcIndexAndSave(wordList, wordWeightMap);
         }
     }
 
@@ -112,14 +124,15 @@ public class IndexBuilder {
         BigDecimal corr = wordWeight
                 .multiply(BigDecimal.valueOf(wordFreq)
                         .multiply(BigDecimal.valueOf(k_1 + 1))
-                        .divide(BigDecimal.valueOf((k_1 * (1 - b)) + b * (double) (docLen / docAveLen) + wordFreq)));
+                        .divide(BigDecimal.valueOf((k_1 * (1 - b)) + b * (double) (docLen / docAveLen) + wordFreq),
+                        3, RoundingMode.HALF_EVEN));
 
         return corr;
     }
-
-    // 计算所有word的权重
     public HashMap<String, BigDecimal> calculateWeight(long docTotalNum, List<String> wordListTotal) {
         // 1. 统计包含某个分词的文档个数 word,wordDocNum
+
+    // 计算所有word的权重
         HashMap<String, Long> wordDocNumMap = indexPartialStorage.getWordDocNum(wordListTotal);
 
         // 2. 计算权重

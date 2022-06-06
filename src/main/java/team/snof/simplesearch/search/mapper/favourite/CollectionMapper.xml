@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="team.snof.simplesearch.search.mapper.favourite.CollectionMapper">
 
-    <resultMap id="BaseResultMap" type="team.snof.simplesearch.search.model.bo.favorite.Collection">
+    <resultMap id="BaseResultMap" type="team.snof.simplesearch.search.model.dao.favorite.Collection">
         <id column="id" property="id" />
         <result column="favourite_id" property="favouriteId" />
         <result column="data_id" property="dataId" />

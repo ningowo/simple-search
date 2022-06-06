@@ -1,4 +1,4 @@
-package team.snof.simplesearch.common.util;
+package team.snof.simplesearch.search.storage;
 
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
@@ -13,7 +13,7 @@ import java.io.*;
 /**
  * @author czt
  */
-public class OssUtil {
+public class OssStorage {
 
     /**
      * 配置直接写这了

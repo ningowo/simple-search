@@ -1,7 +1,7 @@
 package team.snof.simplesearch.search.engine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.common.util.OssUtil;
+import team.snof.simplesearch.search.storage.OssStorage;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.index.Index;
@@ -24,42 +24,44 @@ public class EngineImpl implements Engine {
     private final int expireDuration = 10;//倒排索引缓存时间(min)
     //返回全部文档结果
     public ComplexEngineResult find(Map<String, Integer> wordToFreqMap){
-         // 获取分词
-         List<String> words = new ArrayList<>();
-         for(String word : wordToFreqMap.keySet()) words.add(word);
-
-         List<Index> indexs = batchFindIndexes(words);
-         List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
-         List<Doc> docs = batchFindDocs(docIds);
-         return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
+//         // 获取分词
+//         List<String> words = new ArrayList<>();
+//         for(String word : wordToFreqMap.keySet()) words.add(word);
+//
+//         List<Index> indexs = batchFindIndexes(words);
+//         List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
+//         List<Doc> docs = batchFindDocs(docIds);
+//         return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
+        return new ComplexEngineResult();
     }
 
     //返回指定文档结果
     public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit){
         // 获取分词
-        List<String> words = new ArrayList<>();
-        for(String word : wordToFreqMap.keySet()) words.add(word);
-
-        List<Index> indexs = batchFindIndexes(words);
-        List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
-        List<Long> partialDocIds = new ArrayList<>();
-        for(int i = offset, upper = offset + limit; i < docIds.size() && i < upper; ++i){//避免越界
-            partialDocIds.add(docIds.get(i));
-        }
-        List<Doc> docs = batchFindDocs(partialDocIds);
-        return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
+//        List<String> words = new ArrayList<>();
+//        for(String word : wordToFreqMap.keySet()) words.add(word);
+//
+//        List<Index> indexs = batchFindIndexes(words);
+//        List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
+//        List<Long> partialDocIds = new ArrayList<>();
+//        for(int i = offset, upper = offset + limit; i < docIds.size() && i < upper; ++i){//避免越界
+//            partialDocIds.add(docIds.get(i));
+//        }
+//        List<Doc> docs = batchFindDocs(partialDocIds);
+//        return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
+        return new ComplexEngineResult();
     }
 
     // 文档查询
     public Doc findDoc(Long docId){
-        return OssUtil.getBySnowId(docId);
+        return OssStorage.getBySnowId(docId);
     }
 
     //批查询文档
     public List<Doc> batchFindDocs(List<Long> docIds){// 常用
         List<Doc> docs = new ArrayList<>();
         for(Long docId: docIds){
-            docs.add(OssUtil.getBySnowId(docId));
+            docs.add(OssStorage.getBySnowId(docId));
         }
         return docs;
     }
