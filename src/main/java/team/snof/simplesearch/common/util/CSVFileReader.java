@@ -58,7 +58,7 @@ public class CSVFileReader {
             while ((values = csvReader.readNext()) != null) {
                 String url = values[0];
                 String caption = values[1];
-                docs.add(new Doc(url, caption));
+                docs.add(new Doc(0L, url, caption));
             }
         } catch (IOException | CsvValidationException e) {
             e.printStackTrace();
