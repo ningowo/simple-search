@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import team.snof.simplesearch.search.model.vo.FavouriteVO;
 import team.snof.simplesearch.search.model.vo.ResultVO;
-import team.snof.simplesearch.search.service.FavouriteService;
+import team.snof.simplesearch.user.service.FavouriteService;
 
 import javax.management.InstanceAlreadyExistsException;
 

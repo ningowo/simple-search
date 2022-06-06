@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.service;
+package team.snof.simplesearch.user.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;

@@ -43,7 +43,8 @@ public class SearchController {
     @RequestMapping(value = "/search/test", method = RequestMethod.GET)
     @ApiOperation("测试接口")
     public ResultVO<String> test() {
-        return ResultVO.newSuccessResult("测试接口ok");
+        String test = searchService.test();
+        return ResultVO.newSuccessResult("测试接口ok: " + test);
     }
 
 }
