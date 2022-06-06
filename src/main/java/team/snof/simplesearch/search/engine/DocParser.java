@@ -1,6 +1,7 @@
 package team.snof.simplesearch.search.engine;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import team.snof.simplesearch.common.util.OssUtil;
 import team.snof.simplesearch.common.util.SnowflakeIdGenerator;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
@@ -30,9 +31,6 @@ public class DocParser {
     WordSegmentation segmentation;
   
     @Autowired
-    SnowflakeIdGenerator snowflakeIdGenerator;
-  
-    @Autowired
     DocStorage docStorage;
   
     @Autowired
@@ -42,9 +40,9 @@ public class DocParser {
     DocLenStorage docLenStorage;
   
     // 解析doc，并获得索引所需参数
-    public void parse(List<Doc> docList) {
+    public void parse(List<Doc> docList) { 
         for (Doc doc : docList) {
-            long docId = snowflakeIdGenerator.generate();  // 调用雪花id生成doc_id 后面文档存储也要用这个id
+            long docId = SnowflakeIdGenerator.generate();  // 调用雪花id生成doc_id 后面文档存储也要用这个id
             parseDoc(doc.getUrl(), doc.getCaption(), docId);
         }
     }
@@ -73,6 +71,11 @@ public class DocParser {
 
         // 储存文档
         Doc doc = new Doc(docId, url, caption);
-        docStorage.saveDoc(doc);
+        try {
+            OssUtil.addDoc(doc);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
     }
 }

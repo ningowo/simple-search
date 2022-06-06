@@ -1,8 +1,10 @@
-package team.snof.simplesearch.search.model.dao.engine;
+package team.snof.simplesearch.search.engine;
 
 import java.util.HashMap;
 import java.util.List;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.engine.CompleteResult;
+import team.snof.simplesearch.search.model.dao.engine.RangeResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
 
 public interface Engine {

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@Builder
 public class IndexPartial {
     // 中间表word_temp的数据结构
     private String indexKey;

@@ -35,13 +35,9 @@ class SortLogicTest {
 
         indexs.add(new Index("test",index1));  indexs.add(new Index("namo",index2));
 
-        List<Long> docs = sortLogic.DocSort(indexs,wordToFreq);
+        List<Long> docs = sortLogic.docSort(indexs,wordToFreq);
         for(Long docID:docs){
             System.out.printf("%d\n",docID);
         }
     }
 }
-
-
-
-
