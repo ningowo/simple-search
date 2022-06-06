@@ -8,9 +8,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
+import team.snof.simplesearch.search.adaptor.SearchAdaptor;
 import team.snof.simplesearch.search.engine.Engine;
-import team.snof.simplesearch.search.model.bo.CompleteResultWithRange;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.vo.DocVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
@@ -19,6 +20,7 @@ import team.snof.simplesearch.search.model.vo.SearchResponseVO;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -44,17 +46,7 @@ public class SearchService {
         Integer pageSize = request.getPageSize();
 
         // 获取过滤词信息
-        List<Long> filterDocIds = new ArrayList<>();
-        if (!filterWordList.isEmpty()) {
-            // 获取过滤词对应索引
-            List<Index> indices = engine.batchFindIndexes(filterWordList);
-            // 从索引获取所有要过滤的docids
-            for (Index index : indices) {
-                List<Pair<Long, BigDecimal>> docIdAndCorrList = index.getDocIdAndCorrList();
-                List<Long> docIds = docIdAndCorrList.stream().map(Pair::getLeft).collect(Collectors.toList());
-                filterDocIds.addAll(docIds);
-            }
-        }
+        List<Long> filterDocIds = getFilterDocIds(filterWordList);
 
         // 查询缓存
         redisTemplate.setValueSerializer(RedisSerializer.json());
@@ -87,14 +79,14 @@ public class SearchService {
 
             // 过滤
             if (!filterDocIds.isEmpty()) {
-                docIds = docIds.stream().filter(id -> filterDocIds.contains(id)).collect(Collectors.toList());
+                docIds = filterDocIdsByIds(docIds, filterDocIds);
             }
 
             // 从引擎层获取doc
             List<Doc> docList = engine.batchFindDocs(docIds);
 
             // 准备DocVO
-            List<DocVO> docVOList = docList.stream().map(DocVO::buildDocVO).collect(Collectors.toList());
+            List<DocVO> docVOList = SearchAdaptor.convertDocListToDocVOList(docList);
 
             return SearchResponseVO.builder()
                     .docVOList(docVOList)
@@ -107,43 +99,33 @@ public class SearchService {
         Map<String, Integer> segmentedWordMap = wordSegmentation.segment(query, filterWordList);
 
         // 查询引擎
-        CompleteResultWithRange engineResult = engine.rangeFind(segmentedWordMap, pageNum, pageSize);
+        ComplexEngineResult engineResult = engine.rangeFind(segmentedWordMap, pageNum, pageSize);
 
         // 更新缓存
         queryCache.rightPush(engineResult.getTotalDocIds());
 
+        List<Doc> docList;
         // 如为第一页不用重新去搜索引擎查找
         if (pageNum == 1) {
-            List<Doc> firstPageDoc = engineResult.getDocs();
+            docList = engineResult.getDocs();
             // 过滤
             if (!filterDocIds.isEmpty()) {
-                firstPageDoc = firstPageDoc.stream()
-                        .filter(doc -> filterDocIds.contains(doc.getSnowflakeDocId()))
-                        .collect(Collectors.toList());
+                filterDocsByIds(docList, filterDocIds);
+            }
+        } else {
+            List<Long> docIds = engineResult.getTotalDocIds();
+
+            // 过滤
+            if (!filterDocIds.isEmpty()) {
+                filterDocIdsByIds(docIds, filterDocIds);
             }
 
-            // 准备DocVO
-            List<DocVO> docVOList = firstPageDoc.stream().map(DocVO::buildDocVO).collect(Collectors.toList());
-
-            return SearchResponseVO.builder()
-                    .docVOList(docVOList)
-                    .relatedSearchList(engineResult.getRelatedSearch())
-                    .build();
+            // 如不为第一页需回表
+            docList = engine.batchFindDocs(docIds);
         }
-        
-        
-        // 如不为第一页需回表
-        List<Long> docIds = engineResult.getTotalDocIds();
-        
-        // 过滤
-        if (!filterDocIds.isEmpty()) {
-            docIds = docIds.stream().filter(id -> filterDocIds.contains(id)).collect(Collectors.toList());
-        }
-
-        List<Doc> docList = engine.batchFindDocs(docIds);
 
         // 准备DocVO
-        List<DocVO> docVOList = docList.stream().map(DocVO::buildDocVO).collect(Collectors.toList());
+        List<DocVO> docVOList = SearchAdaptor.convertDocListToDocVOList(docList);
 
         return SearchResponseVO.builder()
                 .docVOList(docVOList)
@@ -151,7 +133,37 @@ public class SearchService {
                 .build();
     }
 
+    private List<Long> getFilterDocIds(List<String> filterWordList) {
+        if (filterWordList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 获取过滤词对应索引
+        List<Index> indices = engine.batchFindIndexes(filterWordList);
+        // 从索引获取所有要过滤的docids
+        List<Long> filterDocIds = new ArrayList<>();
+        for (Index index : indices) {
+            List<Pair<Long, BigDecimal>> docIdAndCorrList = index.getDocIdAndCorrList();
+            List<Long> docIds = docIdAndCorrList.stream().map(Pair::getLeft).collect(Collectors.toList());
+            filterDocIds.addAll(docIds);
+        }
+
+        return filterDocIds;
+    }
+
+    private List<Long> filterDocIdsByIds(List<Long> docIds, List<Long> idsToFilter) {
+        return docIds.stream().filter(id -> idsToFilter.contains(id)).collect(Collectors.toList());
+    }
+
+    private List<Doc> filterDocsByIds(List<Doc> docs, List<Long> idsToFilter) {
+        return docs.stream()
+                .filter(doc -> idsToFilter.contains(doc.getSnowflakeDocId()))
+                .collect(Collectors.toList());
+    }
+
+
     public String test() {
+        // 测试redis
         redisTemplate.setValueSerializer(RedisSerializer.json());
         String key = "key1";
         List<String> value = new ArrayList<>();
