@@ -2,17 +2,15 @@ package team.snof.simplesearch.search.engine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.OssUtil;
-import team.snof.simplesearch.search.model.dao.engine.Engine;
-import team.snof.simplesearch.search.model.dao.engine.CompleteResult;
-import team.snof.simplesearch.search.model.dao.engine.RangeResult;
+import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import org.springframework.data.redis.core.RedisTemplate;
 import team.snof.simplesearch.search.storage.IndexStorage;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -20,40 +18,36 @@ public class EngineImpl implements Engine {
     @Autowired
     IndexStorage indexStorage;
     @Autowired
-    EngineImpl engineImpl;
-    @Autowired
-    SortLogic sortLogic;
-    @Autowired
     RedisTemplate redisTemplate;
 
     private final String indexRedisFormat = "engine:index:%s:string";//索引redis格式串
     private final int expireDuration = 10;//倒排索引缓存时间(min)
     //返回全部文档结果
-    public CompleteResult find(HashMap<String, Integer> wordToFreqMap){
+    public ComplexEngineResult find(Map<String, Integer> wordToFreqMap){
          // 获取分词
          List<String> words = new ArrayList<>();
          for(String word : wordToFreqMap.keySet()) words.add(word);
 
-         List<Index> indexs = engineImpl.batchFindIndexs(words);
-         List<Long> docIds = sortLogic.DocSort(indexs,wordToFreqMap);
-         List<Doc> docs = engineImpl.batchFindDocs(docIds);
-         return new CompleteResult(docs,docIds,sortLogic.wordSort(docs));
+         List<Index> indexs = batchFindIndexes(words);
+         List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
+         List<Doc> docs = batchFindDocs(docIds);
+         return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
     }
 
     //返回指定文档结果
-    public RangeResult rangeFind(HashMap<String, Integer> wordToFreqMap, int offset, int limit){
+    public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit){
         // 获取分词
         List<String> words = new ArrayList<>();
         for(String word : wordToFreqMap.keySet()) words.add(word);
 
-        List<Index> indexs = engineImpl.batchFindIndexs(words);
-        List<Long> docIds = sortLogic.DocSort(indexs,wordToFreqMap);
+        List<Index> indexs = batchFindIndexes(words);
+        List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
         List<Long> partialDocIds = new ArrayList<>();
         for(int i = offset, upper = offset + limit; i < docIds.size() && i < upper; ++i){//避免越界
             partialDocIds.add(docIds.get(i));
         }
-        List<Doc> docs = engineImpl.batchFindDocs(partialDocIds);
-        return new RangeResult(docs,docIds,sortLogic.wordSort(docs));
+        List<Doc> docs = batchFindDocs(partialDocIds);
+        return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
     }
 
     // 文档查询
@@ -87,7 +81,7 @@ public class EngineImpl implements Engine {
     }
 
     //批查询索引
-    public List<Index> batchFindIndexs(List<String> words){
+    public List<Index> batchFindIndexes(List<String> words){
         //redis查询
         List<String> wordRedisKeys = new ArrayList<>(words.size());
         for(int i = 0; i < words.size(); ++i){
