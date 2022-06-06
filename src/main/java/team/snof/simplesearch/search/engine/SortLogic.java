@@ -15,23 +15,23 @@ import java.math.BigDecimal;
 import java.util.*;
 
 @Component
-public class SortLogic {
+public  class SortLogic {
     @Autowired
-    EngineImpl engineImpl;
+    static EngineImpl engineImpl;
     @Autowired
-    DocLenStorage docLenStorage;
+    static DocLenStorage docLenStorage;
     @Autowired
-    IndexPartialStorage indexPartialStorage;
+    static IndexPartialStorage indexPartialStorage;
     @Autowired
-    WordSegmentation segmentation;
+    static WordSegmentation segmentation;
 
-    private HashMap<String,BigDecimal> word2IDF;
+    private static HashMap<String,BigDecimal> word2IDF;
     //private static final int relatedResultNum = 10; //相关检索数目
     private static final int relatedKeywordNum = 3; //每个相关搜索关联的关键字个数
     private static final double k_3 = 1.5;  // k3  1.2~2
 
     //文档排序
-    public static List<Long> DocSort(List<Index> indexs, HashMap<String, Integer> wordToFreqMap) {
+    public static List<Long> docSort(List<Index> indexs, HashMap<String, Integer> wordToFreqMap) {
         //1.计算文档对应的相似度
         HashMap<Long, BigDecimal> doc2Similarity = new HashMap<>();//kv <docID,similarity>
         for (Index index : indexs) {
@@ -63,7 +63,7 @@ public class SortLogic {
 
     // 相关搜索分词排序
     //!考虑到doc中的关键词可能会多次出现，目前返回关键词值前三大(期望得到主谓宾结构)的不同单词作为相关搜索
-    public List<String> wordSort(List<Doc> docs){
+    public static List<String> wordSort(List<Doc> docs){
         List<String> relatedSearch = new ArrayList<>();
         for(Doc doc:docs){
             relatedSearch.add(calRelatedSearch(doc.getSnowflakeDocId()));
@@ -72,7 +72,7 @@ public class SortLogic {
     }
 
     // 计算单词的IDF
-    private  HashMap<String, BigDecimal> calIDF(long doc_num) {
+    private static HashMap<String, BigDecimal> calIDF(long doc_num) {
         // 1. 统计包含某个分词的文档个数  <word,wordDocNum>
         List<String> wordListTotal = indexPartialStorage.getAllIndexPartialWord();
         HashMap<String, Long> word2FreqMap = indexPartialStorage.getWordDocNum(wordListTotal);
@@ -88,7 +88,7 @@ public class SortLogic {
     }
 
     // 计算某一文档的词频
-    private  HashMap<String,BigDecimal> calTF(List<String> wordList){
+    private  static HashMap<String,BigDecimal> calTF(List<String> wordList){
         // <word,term frequency>
         HashMap<String,BigDecimal> word2Num = new HashMap<>();
 
@@ -98,7 +98,7 @@ public class SortLogic {
         return word2Num;
     }
 
-    private  String calRelatedSearch(Long docId){
+    private static String calRelatedSearch(Long docId){
         //1.对文档分词
         Doc doc = engineImpl.findDoc(docId);
         List<String> wordList = segmentation.segment(doc.getCaption());
