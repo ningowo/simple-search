@@ -8,6 +8,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +32,7 @@ public class DocLenStorage {
                 Aggregation.group("_class").avg("docLen").as("avgLen")
         );
         List<Map> results = mongoTemplate.aggregate(aggregation, "doc_length", Map.class).getMappedResults();
-        return (long) results.get(0).get("avgLen");
+        return Math.round((Double) results.get(0).get("avgLen"));
     }
 
     public long getDocLen(long docId) {

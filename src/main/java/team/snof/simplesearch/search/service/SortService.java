@@ -60,23 +60,23 @@ public class SortService {
         }
         return orderedDocs;
     }
-    private void test(){
-        List<String> query = new ArrayList<>(2);
-        List<Index> indexs = new ArrayList<>(2);
-        query.add("test");query.add("namo");
-
-        List<DocInfo>  index1 = new ArrayList<>();
-        List<DocInfo>  index2 = new ArrayList<>();
-        index1.add(new DocInfo(1,3,new BigDecimal(0.2)));
-        index1.add(new DocInfo(2,4,new BigDecimal(0.6)));
-        index2.add(new DocInfo(1,3,new BigDecimal(0.4)));
-        index2.add(new DocInfo(2,4,new BigDecimal(0.3)));
-
-        indexs.add(new Index("test",index1));  indexs.add(new Index("namo",index2));
-
-        List<Long> docs = order(query,indexs);
-        for(Long docID:docs){
-            System.out.printf("%d\n",docID);
-        }
-    }
+//    private void test(){
+//        List<String> query = new ArrayList<>(2);
+//        List<Index> indexs = new ArrayList<>(2);
+//        query.add("test");query.add("namo");
+//
+//        List<DocInfo>  index1 = new ArrayList<>();
+//        List<DocInfo>  index2 = new ArrayList<>();
+//        index1.add(new DocInfo(1,3,new BigDecimal(0.2)));
+//        index1.add(new DocInfo(2,4,new BigDecimal(0.6)));
+//        index2.add(new DocInfo(1,3,new BigDecimal(0.4)));
+//        index2.add(new DocInfo(2,4,new BigDecimal(0.3)));
+//
+//        indexs.add(new Index("test",index1));  indexs.add(new Index("namo",index2));
+//
+//        List<Long> docs = order(query,indexs);
+//        for(Long docID:docs){
+//            System.out.printf("%d\n",docID);
+//        }
+//    }
 }

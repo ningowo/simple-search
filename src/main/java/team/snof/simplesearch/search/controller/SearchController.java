@@ -9,31 +9,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import team.snof.simplesearch.search.model.vo.ResultVO;
-import team.snof.simplesearch.search.model.vo.SearchListResponseVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
-import team.snof.simplesearch.search.service.SearchService;;import java.util.ArrayList;
-import java.util.List;
+import team.snof.simplesearch.search.model.vo.SearchResponseVO;
+
+import java.io.IOException;
 
 @Api("搜索接口")
 @RestController()
-@RequestMapping("/search")
 public class SearchController {
 
-    @Autowired
-    SearchService searchService;
-
-
-    @RequestMapping(value = "/s", method = RequestMethod.GET)
+    @RequestMapping(value = "/search", method = RequestMethod.GET)
     @ApiOperation("搜索接口")
-    public ResultVO<SearchListResponseVO> search(@RequestBody SearchRequestVO request) {
+    public ResultVO search( SearchRequestVO request) {
+        if (request.getQuery().isBlank()) {
+            return ResultVO.newParamErrorResult("查询文字不能为空！");
+        }
 
-        return ResultVO.newSuccessResult(searchService.search(request));
+        return ResultVO.newSuccessResult();
     }
 
-    @RequestMapping(value = "/test", method = RequestMethod.GET)
+    @RequestMapping(value = "/search/stest", method = RequestMethod.GET)
     @ApiOperation("测试接口")
     public ResultVO<String> test() {
-        return ResultVO.newSuccessResult(searchService.test());
+        return ResultVO.newSuccessResult("测试接口ok: ");
     }
 
 }

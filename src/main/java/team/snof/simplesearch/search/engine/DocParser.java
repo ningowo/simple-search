@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.engine;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
@@ -17,17 +18,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 public class DocParser {
-    private static final int CORE_POOL_SIZE = 10;
-    private static final int MAXIMUM_POOL_SIZE = 10;
-    private static final long KEEP_ALIVE_TIME = 30;
-    private ThreadPoolExecutor executor = new ThreadPoolExecutor(
-            CORE_POOL_SIZE,
-            MAXIMUM_POOL_SIZE,
-            KEEP_ALIVE_TIME,
-            TimeUnit.SECONDS,
-            new ArrayBlockingQueue<>(1000, false));
 
     @Autowired
     WordSegmentation wordSegmentation;
@@ -37,7 +30,6 @@ public class DocParser {
 
     @Autowired
     DocLenStorage docLenStorage;
-
 
     // 解析doc，并获得索引所需参数
     public void parse(List<Doc> docList) throws Exception {

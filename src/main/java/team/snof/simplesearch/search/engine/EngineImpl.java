@@ -24,30 +24,32 @@ public class EngineImpl implements Engine {
     private final int expireDuration = 10;//倒排索引缓存时间(min)
     //返回全部文档结果
     public ComplexEngineResult find(Map<String, Integer> wordToFreqMap){
-         // 获取分词
-         List<String> words = new ArrayList<>();
-         for(String word : wordToFreqMap.keySet()) words.add(word);
-
-         List<Index> indexs = batchFindIndexes(words);
-         List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
-         List<Doc> docs = batchFindDocs(docIds);
-         return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
+//         // 获取分词
+//         List<String> words = new ArrayList<>();
+//         for(String word : wordToFreqMap.keySet()) words.add(word);
+//
+//         List<Index> indexs = batchFindIndexes(words);
+//         List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
+//         List<Doc> docs = batchFindDocs(docIds);
+//         return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
+        return new ComplexEngineResult();
     }
 
     //返回指定文档结果
     public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit){
         // 获取分词
-        List<String> words = new ArrayList<>();
-        for(String word : wordToFreqMap.keySet()) words.add(word);
-
-        List<Index> indexs = batchFindIndexes(words);
-        List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
-        List<Long> partialDocIds = new ArrayList<>();
-        for(int i = offset, upper = offset + limit; i < docIds.size() && i < upper; ++i){//避免越界
-            partialDocIds.add(docIds.get(i));
-        }
-        List<Doc> docs = batchFindDocs(partialDocIds);
-        return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
+//        List<String> words = new ArrayList<>();
+//        for(String word : wordToFreqMap.keySet()) words.add(word);
+//
+//        List<Index> indexs = batchFindIndexes(words);
+//        List<Long> docIds = SortLogic.docSort(indexs,wordToFreqMap);
+//        List<Long> partialDocIds = new ArrayList<>();
+//        for(int i = offset, upper = offset + limit; i < docIds.size() && i < upper; ++i){//避免越界
+//            partialDocIds.add(docIds.get(i));
+//        }
+//        List<Doc> docs = batchFindDocs(partialDocIds);
+//        return new ComplexEngineResult(docs,docIds,SortLogic.wordSort(docs));
+        return new ComplexEngineResult();
     }
 
     // 文档查询

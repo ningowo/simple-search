@@ -5,6 +5,7 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvValidationException;
+import lombok.extern.slf4j.Slf4j;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 
 import java.io.FileInputStream;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Slf4j
 public class CSVFileReader {
     // 默认的文件读取根目录
     private static final String PROJECT_ROOT = System.getProperty("user.dir");
