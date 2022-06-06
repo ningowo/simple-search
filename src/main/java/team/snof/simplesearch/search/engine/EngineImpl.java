@@ -1,7 +1,7 @@
 package team.snof.simplesearch.search.engine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.common.util.OssUtil;
+import team.snof.simplesearch.search.storage.OssStorage;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.index.Index;
@@ -54,14 +54,14 @@ public class EngineImpl implements Engine {
 
     // 文档查询
     public Doc findDoc(Long docId){
-        return OssUtil.getBySnowId(docId);
+        return OssStorage.getBySnowId(docId);
     }
 
     //批查询文档
     public List<Doc> batchFindDocs(List<Long> docIds){// 常用
         List<Doc> docs = new ArrayList<>();
         for(Long docId: docIds){
-            docs.add(OssUtil.getBySnowId(docId));
+            docs.add(OssStorage.getBySnowId(docId));
         }
         return docs;
     }

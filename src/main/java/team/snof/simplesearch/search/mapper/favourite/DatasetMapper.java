@@ -2,8 +2,8 @@ package team.snof.simplesearch.search.mapper.favourite;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.springframework.stereotype.Repository;
-import team.snof.simplesearch.search.model.bo.favorite.Collection;
-import team.snof.simplesearch.search.model.bo.favorite.Dataset;
+import team.snof.simplesearch.search.model.dao.favorite.Collection;
+import team.snof.simplesearch.search.model.dao.favorite.Dataset;
 
 import java.util.List;
 

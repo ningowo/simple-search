@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.common.util.OssUtil;
+import team.snof.simplesearch.search.storage.OssStorage;
 import team.snof.simplesearch.common.util.SnowFlakeIDGenerator;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
@@ -14,9 +14,6 @@ import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -65,6 +62,6 @@ public class DocParser {
 
         // 储存文档
         Doc doc = new Doc(docId, url, caption);
-        OssUtil.addDoc(doc);
+        OssStorage.addDoc(doc);
     }
 }

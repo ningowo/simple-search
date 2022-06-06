@@ -40,6 +40,7 @@ public class IndexBuilder {
     long docAveLen;
     long docTotalNum;
 
+//    todo 多线程
 //    public IndexBuilder() {
 ////        executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 5, 30,
 ////                TimeUnit.SECONDS, new ArrayBlockingQueue<>(100, false));
