@@ -25,7 +25,7 @@ public class IndexStorage {
 
     public List<Index> findByKey(String key) {
         Query query = new Query(Criteria.where("indexKey").is(key));
-        return mongoTemplate.find(query, Index.class);
+        return mongoTemplate.find(query, Index.class, "word_docid_corr");
     }
 
     public void save(Index index) {
