@@ -26,7 +26,7 @@ import java.util.Map;
 
 @Api("搜索接口")
 @RestController()
-@RequestMapping("/search")
+@RequestMapping("/search/test")
 public class TestController {
 
     @Autowired
@@ -123,9 +123,6 @@ public class TestController {
         System.out.println(indices);
         return indices;
     }
-
-
-
 
     @RequestMapping(value = "/test1", method = RequestMethod.GET)
     public ResultVO<String> buildIndex() {
