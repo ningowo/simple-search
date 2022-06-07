@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.model.dao.index;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -7,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
+@AllArgsConstructor
 public class Index {
 
     // 转码过的transcoded中文或英文分词

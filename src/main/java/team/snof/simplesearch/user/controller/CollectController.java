@@ -17,7 +17,7 @@ import javax.management.InstanceAlreadyExistsException;
 
 @Api(value = "用户收藏夹")
 @RestController()
-@RequestMapping("/collect")
+@RequestMapping("/api/collect")
 public class CollectController {
 
     @Autowired

@@ -5,9 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+
+import lombok.NoArgsConstructor;
 import  team.snof.simplesearch.search.model.dao.doc.Doc;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class ComplexEngineResult {
 

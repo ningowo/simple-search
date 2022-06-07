@@ -9,7 +9,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.adaptor.SearchAdaptor;
-import team.snof.simplesearch.search.engine.Engine;
+import team.snof.simplesearch.search.engine.EngineImpl;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
@@ -31,7 +31,7 @@ public class SearchService {
     private static Integer DEFAULT_PAGE_SIZE = 30;
 
     @Autowired
-    Engine engine;
+    EngineImpl engine;
 
     @Autowired
     WordSegmentation wordSegmentation;
@@ -44,11 +44,18 @@ public class SearchService {
         String query = request.getQuery();
         Integer pageNum = request.getPageNum();
         Integer pageSize = request.getPageSize();
+        if (pageNum == null || pageNum <= 0
+                || pageSize == null || pageSize <= 0) {
+            pageNum = 1;
+            pageSize = DEFAULT_PAGE_SIZE;
+        }
+
 
         // 获取过滤词信息
         List<Long> filterDocIds = getFilterDocIds(filterWordList);
 
         // 查询缓存
+        redisTemplate.setKeySerializer(RedisSerializer.json());
         redisTemplate.setValueSerializer(RedisSerializer.json());
         String queryCacheKey = "search:page:" + query + ":list";
         String queryRelatedSearchKey = "search:related:" + query + ":list";;
@@ -59,16 +66,12 @@ public class SearchService {
         // Redis缓存：key=query，value=doc_id_list
         if (redisTemplate.hasKey(queryCacheKey)) {
             List<Long> docIds;
-            if (pageNum == null || pageSize == null) {
-                pageNum = 1;
-                pageSize = DEFAULT_PAGE_SIZE;
-            }
 
             // Redis的rlange左右都是闭区间
             long start = (pageNum - 1) * pageSize;
             long end = pageNum * pageSize - 1;
 
-            if (start < queryCache.size() - 1) {
+            if (start > queryCache.size() - 1) {
                 throw new IllegalArgumentException("所查询的记录超出范围!");
             }
             end = Math.min(end, queryCache.size());
@@ -102,7 +105,10 @@ public class SearchService {
         ComplexEngineResult engineResult = engine.rangeFind(segmentedWordMap, pageNum, pageSize);
 
         // 更新缓存
-        queryCache.rightPush(engineResult.getTotalDocIds());
+        for (Long totalDocId : engineResult.getTotalDocIds()) {
+            queryCache.rightPush(totalDocId);
+        }
+        queryRelatedSearchCache.put(queryRelatedSearchKey, engineResult.getRelatedSearch());
 
         List<Doc> docList;
         // 如为第一页不用重新去搜索引擎查找
@@ -110,14 +116,14 @@ public class SearchService {
             docList = engineResult.getDocs();
             // 过滤
             if (!filterDocIds.isEmpty()) {
-                filterDocsByIds(docList, filterDocIds);
+                docList = filterDocsByIds(docList, filterDocIds);
             }
         } else {
             List<Long> docIds = engineResult.getTotalDocIds();
 
             // 过滤
             if (!filterDocIds.isEmpty()) {
-                filterDocIdsByIds(docIds, filterDocIds);
+                docIds = filterDocIdsByIds(docIds, filterDocIds);
             }
 
             // 如不为第一页需回表
@@ -152,12 +158,12 @@ public class SearchService {
     }
 
     private List<Long> filterDocIdsByIds(List<Long> docIds, List<Long> idsToFilter) {
-        return docIds.stream().filter(id -> idsToFilter.contains(id)).collect(Collectors.toList());
+        return docIds.stream().filter(id -> !idsToFilter.contains(id)).collect(Collectors.toList());
     }
 
     private List<Doc> filterDocsByIds(List<Doc> docs, List<Long> idsToFilter) {
         return docs.stream()
-                .filter(doc -> idsToFilter.contains(doc.getSnowflakeDocId()))
+                .filter(doc -> !idsToFilter.contains(doc.getSnowflakeDocId()))
                 .collect(Collectors.toList());
     }
 
