@@ -39,7 +39,6 @@ public  class SortLogic {
             for (DocInfo doc : index.getDocInfoList()) {
                 BigDecimal corr = doc.getCorr().multiply(new BigDecimal((k_3 + 1) * wordToFreqMap.get(word)))
                         .divide(new BigDecimal(k_3 + wordToFreqMap.get(word)), 3, RoundingMode.HALF_EVEN);
-                //System.out.println(corr.toString());
                 doc2Similarity.put(doc.getDocId(), doc2Similarity.getOrDefault(doc.getDocId(), new BigDecimal(0)).add(corr));
             }
 
@@ -109,10 +108,12 @@ public  class SortLogic {
         //4.根据TF-IDF计算关键字
         PriorityQueue<Word4Sort> topKeywords = new PriorityQueue<>();
         for(String word: word2Num.keySet()){
-            BigDecimal tf_idf = BigDecimal.valueOf(word2Num.get(word)).multiply(word2IDF.get(word));
-            if(topKeywords.size() < relatedKeywordNum || tf_idf.compareTo(topKeywords.peek().getTf_idf()) > 0){
-                topKeywords.remove(topKeywords.peek());
-                topKeywords.add(new Word4Sort(word,tf_idf));
+            if (word2IDF.containsKey(word)) {
+                BigDecimal tf_idf = BigDecimal.valueOf(word2Num.get(word)).multiply(word2IDF.get(word));
+                if(topKeywords.size() < relatedKeywordNum || tf_idf.compareTo(topKeywords.peek().getTf_idf()) > 0){
+                    topKeywords.remove(topKeywords.peek());
+                    topKeywords.add(new Word4Sort(word,tf_idf));
+                }
             }
         }
 

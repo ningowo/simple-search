@@ -26,7 +26,7 @@ import java.util.Map;
 
 @Api("搜索接口")
 @RestController()
-@RequestMapping("/search")
+@RequestMapping("/search/test")
 public class TestController {
 
     @Autowired
@@ -72,22 +72,21 @@ public class TestController {
         System.out.println(result.getTotalDocIds());
         System.out.println(result.getRelatedSearch());
 
-        System.out.println("))))))))))))))))))");
+        System.out.println("=============================");
+
+        Map<String, Integer> wordToFreqMap1 = new HashMap<>();
+        wordToFreqMap1.put("曾是", 2);
+        wordToFreqMap1.put("妈妈", 1);
+        ComplexEngineResult result1 = engine.rangeFind(wordToFreqMap1, 0, 2);
+        System.out.println(result1.getDocs());
+        System.out.println(result1.getTotalDocIds());
+        System.out.println(result1.getRelatedSearch());
+        System.out.println("+++++++++=============================");
+
         return ResultVO.newSuccessResult("OK");
     }
 
-    @RequestMapping("/save")
-    public void save(Index index) {
-
-        List<DocInfo> docInfos = new ArrayList<>();
-        docInfos.add(new DocInfo(987L,new BigDecimal(0.2)));
-        docInfos.add(new DocInfo(987L,new BigDecimal(0.6)));
-        Index ind = new Index("测试1", docInfos);
-
-        mongoTemplate.save(ind, "word_docid_corr");
-    }
-
-    @RequestMapping("/find")
+    @RequestMapping("/findind")
     public List<Index> findByKey(String key, boolean defaultkey) {
         if (defaultkey) {
             Query query = new Query(Criteria.where("indexKey").is("测试1"));
@@ -102,8 +101,7 @@ public class TestController {
         }
     }
 
-
-    @RequestMapping("/indexstore")
+    @RequestMapping("/savefind")
     public List<Index> indexStore(String key, boolean defaultkey) {
         String indexKey = "测试1";
 
@@ -123,9 +121,6 @@ public class TestController {
         System.out.println(indices);
         return indices;
     }
-
-
-
 
     @RequestMapping(value = "/test1", method = RequestMethod.GET)
     public ResultVO<String> buildIndex() {
