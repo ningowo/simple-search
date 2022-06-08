@@ -50,7 +50,7 @@ public class DocParser {
         DocLen docLen = new DocLen(docId, docLength);
         docLenStorage.save(docLen);
 
-        // 储存分词对应的文档和词频 {word: {doc_id, word_freq}}
+        // 储存分词对应的文档和词频  <word, word_freq>
         for (Map.Entry<String, Integer> entry : wordToFreqMap.entrySet()) {
             // 此处生成tempDatalist 传入构造方法
             TempData tempData = new TempData(docId, entry.getValue());
