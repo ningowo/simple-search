@@ -2,10 +2,12 @@ package team.snof.simplesearch.search.model.dao.index;
 
 import lombok.Data;
 import team.snof.simplesearch.search.model.dao.doc.DocInfo;
+
+import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class Index {
+public class Index implements Serializable {
     public String indexKey; // 分词
 
     public List<DocInfo> docInfoList;
