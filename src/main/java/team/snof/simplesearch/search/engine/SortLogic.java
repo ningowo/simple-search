@@ -55,7 +55,6 @@ public  class SortLogic {
 
         for(Doc4Sort doc:docs){
             orderedDocs.add(doc.getDocId());
-            //System.out.printf("%d %f\n",doc.DocId,Double.valueOf(doc.similarity.toString()));
         }
         return orderedDocs;
     }
