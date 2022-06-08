@@ -1,14 +1,9 @@
 package team.snof.simplesearch.search.engine;
 
-import team.snof.simplesearch.search.model.bo.CompleteResult;
-import team.snof.simplesearch.search.model.bo.CompleteResultWithRange;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
-import team.snof.simplesearch.search.model.vo.DocVO;
-import team.snof.simplesearch.search.model.vo.SearchResponseVO;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

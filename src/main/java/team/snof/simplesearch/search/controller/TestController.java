@@ -24,6 +24,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 使用说明：
+ * 1. 开启redis和mongodb
+ * 2. 启动项目
+ * 3. 下载数据集并放到指定位置
+ *      3.1 放到"D:\\ByteDanceCamp\\test20.csv"，然后直接访问http://localhost:8080/search/test/buildind?filePath=&defaultPath=true
+ *      3.2 放到随便什么位置，然后访问http://localhost:8080/search/test/buildind?filePath=${随便什么位置}&defaultPath=false
+ *      3.3 然后能看到console打印的"解析文件和存储文件、构建索引并存储"，即为成功
+ * 4. 访问http://localhost:8080/search/test/eng，即可简单测试engine.find和engine.rangeFind这两个接口
+ * 5. （可选）自定义测试方法，修改engineTest方法的参数和内容，自己在controller里传参进行测试
+ */
 @Api("搜索接口")
 @RestController()
 @RequestMapping("/search/test")
@@ -35,8 +46,14 @@ public class TestController {
     @Autowired
     IndexStorage indexStorage;
 
-    @RequestMapping("/parsedoc")
-    public ResultVO getAndParseFile(@RequestParam String filePath, @RequestParam boolean defaultPath) throws Exception {
+    @Autowired
+    Engine engine;
+
+    @Autowired
+    MongoTemplate mongoTemplate;
+
+    @RequestMapping(value = "/buildind", method = RequestMethod.GET)
+    public ResultVO<String> buildIndex(@RequestParam String filePath, @RequestParam boolean defaultPath) throws Exception {
 
         String path;
         if (defaultPath) {
@@ -44,114 +61,95 @@ public class TestController {
         } else {
             path = filePath;
         }
-        runner.parseAndStoreDocs(path);
 
-        return ResultVO.newSuccessResult();
+        runner.generate(path);
+
+        return ResultVO.newSuccessResult("Result: " + path);
     }
 
-    @RequestMapping("/build")
-    public ResultVO buildIndex() {
+    @RequestMapping(value = "/eng", method = RequestMethod.GET)
+    public ResultVO<String> engineTest() {
+        System.out.println("+++++++++++");
 
-        runner.buildIndex();
+        List<String> words = new ArrayList<>();
+        words.add("曾是");
+        words.add("妈妈");
 
-        return ResultVO.newSuccessResult();
-    }
+        List<Long> docIds = new ArrayList<>();
+        docIds.add(6932693475694469120L);
+        docIds.add(6932695833488785408L);
+        docIds.add(6932695902157930496L);
 
-    @RequestMapping("/find")
-    public ResultVO findAllIndex() {
-        List<Index> all = indexStorage.findAll();
+//        List<Index> indices = engine.batchFindIndexes(words);
+//        for (Index index : indices) {
+//            System.out.println("IND+++++++++++" + index);
+//        }
+//        Index ind = engine.findIndex("曾是");
+//        System.out.println(ind);
 
-        return ResultVO.newSuccessResult(all);
-    }
+        System.out.println("==================================================");
 
-    @RequestMapping(value = "/test1", method = RequestMethod.GET)
-    public ResultVO<String> test1() {
+        Map<String, Integer> wordToFreqMap = new HashMap<>();
+        wordToFreqMap.put("曾是", 2);
+        wordToFreqMap.put("妈妈", 1);
+        ComplexEngineResult result = engine.find(wordToFreqMap);
+        System.out.println(result.getDocs());
+        System.out.println(result.getTotalDocIds());
+        System.out.println(result.getRelatedSearch());
+
+        System.out.println("=============================");
+
+        Map<String, Integer> wordToFreqMap1 = new HashMap<>();
+        wordToFreqMap1.put("曾是", 2);
+        wordToFreqMap1.put("妈妈", 1);
+        ComplexEngineResult result1 = engine.rangeFind(wordToFreqMap1, 0, 2);
+        System.out.println(result1.getDocs());
+        System.out.println(result1.getTotalDocIds());
+        System.out.println(result1.getRelatedSearch());
+        System.out.println("+++++++++=============================");
+
         return ResultVO.newSuccessResult("OK");
     }
 
+    @RequestMapping("/findind")
+    public List<Index> findByKey(String key, boolean defaultkey) {
+        if (defaultkey) {
+            Query query = new Query(Criteria.where("indexKey").is("测试1"));
+            List<Index> indices = mongoTemplate.find(query, Index.class);
+            System.out.println(indices);
+            return indices;
+        } else {
+            Query query = new Query(Criteria.where("indexKey").is(key));
+            List<Index> indices = mongoTemplate.find(query, Index.class);
+            System.out.println(indices);
+            return indices;
+        }
+    }
 
-//    @RequestMapping(value = "/eng", method = RequestMethod.GET)
-//    public ResultVO<String> engineTest() {
-//        System.out.println("+++++++++++");
-//
-//        List<String> words = new ArrayList<>();
-//        words.add("曾是");
-//        words.add("妈妈");
-//
-//        List<Long> docIds = new ArrayList<>();
-//        docIds.add(6932693475694469120L);
-//        docIds.add(6932695833488785408L);
-//        docIds.add(6932695902157930496L);
-//
-////        List<Index> indices = engine.batchFindIndexes(words);
-////        for (Index index : indices) {
-////            System.out.println("IND+++++++++++" + index);
-////        }
-////        Index ind = engine.findIndex("曾是");
-////        System.out.println(ind);
-//
-//        System.out.println("==================================================");
-//
-//        Map<String, Integer> wordToFreqMap = new HashMap<>();
-//        wordToFreqMap.put("曾是", 2);
-//        wordToFreqMap.put("妈妈", 1);
-//        ComplexEngineResult result = engine.find(wordToFreqMap);
-//        System.out.println(result.getDocs());
-//        System.out.println(result.getTotalDocIds());
-//        System.out.println(result.getRelatedSearch());
-//
-//        System.out.println("))))))))))))))))))");
-//        return ResultVO.newSuccessResult("OK");
-//    }
-//
-//    @RequestMapping("/save")
-//    public void save(Index index) {
-//
-//        List<DocInfo> docInfos = new ArrayList<>();
-//        docInfos.add(new DocInfo(987L,new BigDecimal(0.2)));
-//        docInfos.add(new DocInfo(987L,new BigDecimal(0.6)));
-//        Index ind = new Index("测试1", docInfos);
-//
-//        mongoTemplate.save(ind, "word_docid_corr");
-//    }
-//
-//    @RequestMapping("/find")
-//    public List<Index> findByKey(String key, boolean defaultkey) {
-//        if (defaultkey) {
-//            Query query = new Query(Criteria.where("indexKey").is("测试1"));
-//            List<Index> indices = mongoTemplate.find(query, Index.class);
-//            System.out.println(indices);
-//            return indices;
-//        } else {
-//            Query query = new Query(Criteria.where("indexKey").is(key));
-//            List<Index> indices = mongoTemplate.find(query, Index.class);
-//            System.out.println(indices);
-//            return indices;
-//        }
-//    }
-//
-//
-//    @RequestMapping("/indexstore")
-//    public List<Index> indexStore(String key, boolean defaultkey) {
-//        String indexKey = "测试1";
-//
-//        if (!defaultkey) {
-//            indexKey = key;
-//        }
-//
-//        List<DocInfo> docInfos = new ArrayList<>();
-//        docInfos.add(new DocInfo(987L,new BigDecimal(0.2)));
-//        docInfos.add(new DocInfo(987L,new BigDecimal(0.6)));
-//        Index ind = new Index(indexKey, docInfos);
-//
-//        indexStorage.save(ind);
-//        System.out.println(ind);
-//
-//        List<Index> indices = indexStorage.findAll();
-//        System.out.println(indices);
-//        return indices;
-//    }
+    @RequestMapping("/savefind")
+    public List<Index> indexStore(String key, boolean defaultkey) {
+        String indexKey = "测试1";
 
+        if (!defaultkey) {
+            indexKey = key;
+        }
 
+        List<DocInfo> docInfos = new ArrayList<>();
+        docInfos.add(new DocInfo(987L,new BigDecimal(0.2)));
+        docInfos.add(new DocInfo(987L,new BigDecimal(0.6)));
+        Index ind = new Index(indexKey, docInfos);
+
+        indexStorage.save(ind);
+        System.out.println(ind);
+
+        List<Index> indices = indexStorage.findAll();
+        System.out.println(indices);
+        return indices;
+    }
+
+    @RequestMapping(value = "/test1", method = RequestMethod.GET)
+    public ResultVO<String> buildIndex() {
+        return ResultVO.newSuccessResult("OK");
+    }
 
 }

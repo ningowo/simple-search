@@ -39,10 +39,8 @@ public  class SortLogic {
             for (DocInfo doc : index.getDocInfoList()) {
                 BigDecimal corr = doc.getCorr().multiply(new BigDecimal((k_3 + 1) * wordToFreqMap.get(word)))
                         .divide(new BigDecimal(k_3 + wordToFreqMap.get(word)), 3, RoundingMode.HALF_EVEN);
-                //System.out.println(corr.toString());
                 doc2Similarity.put(doc.getDocId(), doc2Similarity.getOrDefault(doc.getDocId(), new BigDecimal(0)).add(corr));
             }
-
         }
 
         //2.按相似度从高到低排序
@@ -52,19 +50,24 @@ public  class SortLogic {
             docs[idx++] = new Doc4Sort(entry.getKey(),entry.getValue());
         }
         List<Long> orderedDocs = new ArrayList<>();//DocId
-        Arrays.sort(docs,Collections.reverseOrder());
+        Arrays.sort(docs,Collections.reverseOrder());  // 内部改写了compareTo方法 未加@Override
 
         for(Doc4Sort doc:docs){
             orderedDocs.add(doc.getDocId());
-            //System.out.printf("%d %f\n",doc.DocId,Double.valueOf(doc.similarity.toString()));
         }
-        return orderedDocs;
+        return orderedDocs;  // list(DocId)  ordered
     }
 
     // 相关搜索分词排序
     //!考虑到doc中的关键词可能会多次出现，目前返回关键词值前三大(期望得到主谓宾结构)的不同单词作为相关搜索
     public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap){
         List<String> relatedSearch = new ArrayList<>();
+        /**
+         * 1-这里不需要对所有doc进行提取吧  页面若是给出10个相关搜索词条 提取前十个文档进行分析并返回即可------业务层读取list<string>的处理？？
+         *
+         * 2-（可暂时不更改 看一下效果）calRelatedSearch函数实现的是 对每个文档计算三个关键词拼接为相关搜索词  作为query的相关搜索词条
+         * 这样算出来的很可能和原始query没有关系  我们应该是针对query计算10个相关搜索词即可
+         */
         for(Doc doc:docs){
             relatedSearch.add(calRelatedSearch(doc.getSnowflakeDocId(), wordToFreqMap));
         }
@@ -99,20 +102,23 @@ public  class SortLogic {
     }
 
     private String calRelatedSearch(Long docId, Map<String, Integer> word2Num){
-
+        /**
+         这里就是没有管query了  单纯对文档分析 得到文档的三个关键词作为相关搜索词条
+         */
         //2.判断IDF是否为空并计算IDF
         if(word2IDF.isEmpty()){
             long docNum = docLenStorage.getDocTotalNum();
             word2IDF = calIDF(docNum);
         }
-
         //4.根据TF-IDF计算关键字
         PriorityQueue<Word4Sort> topKeywords = new PriorityQueue<>();
         for(String word: word2Num.keySet()){
-            BigDecimal tf_idf = BigDecimal.valueOf(word2Num.get(word)).multiply(word2IDF.get(word));
-            if(topKeywords.size() < relatedKeywordNum || tf_idf.compareTo(topKeywords.peek().getTf_idf()) > 0){
-                topKeywords.remove(topKeywords.peek());
-                topKeywords.add(new Word4Sort(word,tf_idf));
+            if (word2IDF.containsKey(word)) {
+                BigDecimal tf_idf = BigDecimal.valueOf(word2Num.get(word)).multiply(word2IDF.get(word));
+                if(topKeywords.size() < relatedKeywordNum || tf_idf.compareTo(topKeywords.peek().getTf_idf()) > 0){
+                    topKeywords.remove(topKeywords.peek());
+                    topKeywords.add(new Word4Sort(word,tf_idf));
+                }
             }
         }
 

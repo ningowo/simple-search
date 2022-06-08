@@ -8,10 +8,7 @@ import team.snof.simplesearch.search.model.dao.index.Index;
 import org.springframework.data.redis.core.RedisTemplate;
 import team.snof.simplesearch.search.storage.IndexStorage;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -86,7 +83,11 @@ public class EngineImpl implements Engine {
         return index;
     }
 
-    //批查询索引
+    /**
+     * 只返回非空索引
+     * @param words
+     * @return
+     */
     public List<Index> batchFindIndexes(List<String> words){
         if (words.isEmpty()) {
             return Collections.emptyList();
@@ -114,6 +115,7 @@ public class EngineImpl implements Engine {
                 redisTemplate.expire(wordRedisKeys.get(i), expireDuration, TimeUnit.MINUTES);
             }
         }
+        indexs.removeIf(Objects::isNull);
         return indexs;
     }
 }

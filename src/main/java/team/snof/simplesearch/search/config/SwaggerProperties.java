@@ -1,4 +1,4 @@
-package team.snof.simplesearch.config;
+package team.snof.simplesearch.search.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
