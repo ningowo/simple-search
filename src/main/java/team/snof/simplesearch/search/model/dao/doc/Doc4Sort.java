@@ -15,6 +15,7 @@ public class Doc4Sort implements  Comparable<Doc4Sort> {
         this.DocId = docId;
         this.similarity = similarity;
     }
+    @Override
     public int compareTo(Doc4Sort y){
         return similarity.compareTo(y.similarity);
     }

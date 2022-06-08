@@ -64,8 +64,9 @@ public  class SortLogic {
     //!考虑到doc中的关键词可能会多次出现，目前返回关键词值前三大(期望得到主谓宾结构)的不同单词作为相关搜索
     public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
         List<String> relatedSearch = new ArrayList<>();
-        for(Doc doc:docs){
-            relatedSearch.add(calRelatedSearch(doc));
+        int maxNum = Math.min(4, docs.size());
+        for (int i = 0; i < maxNum; i++) {
+            relatedSearch.add(calRelatedSearch(docs.get(i)));
         }
         return relatedSearch;
     }
