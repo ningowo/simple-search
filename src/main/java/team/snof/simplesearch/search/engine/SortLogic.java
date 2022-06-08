@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.engine;
 
+import io.swagger.models.auth.In;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
@@ -24,7 +25,7 @@ public  class SortLogic {
     @Autowired
     IndexPartialStorage indexPartialStorage;
     @Autowired
-    WordSegmentation segmentation;
+    WordSegmentation wordSegmentation;
 
     private static HashMap<String,BigDecimal> word2IDF = new HashMap<>();
     //private static final int relatedResultNum = 10; //相关检索数目
@@ -59,15 +60,54 @@ public  class SortLogic {
         return orderedDocs;  // list(DocId)  ordered
     }
 
-    // 相关搜索分词排序
-    //!考虑到doc中的关键词可能会多次出现，目前返回关键词值前三大(期望得到主谓宾结构)的不同单词作为相关搜索
-    public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
+    /**
+     * 修改相关搜索实现方式
+     * @param docs
+     * @param wordToFreqMap
+     * @return
+     */
+    public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) throws IOException {
+        // 先得到query的关键词  计算wordToFreqMap中所有word的IDF  最大的作为关键词
+        long docTotalNum = docLenStorage.getDocTotalNum();
+        HashMap<String, BigDecimal> wordToIDFMap = new HashMap<>();
+        String keyWord = wordToFreqMap.keySet().iterator().next();
+        BigDecimal keyIDF = calWordIDF(keyWord, docTotalNum);
+
+        for (String word : wordToFreqMap.keySet()) {
+            BigDecimal wordIDF = calWordIDF(word, docTotalNum);
+            if (wordIDF.compareTo(keyIDF) == 1) keyWord = word;
+        }
+
+        // 取docs前4个文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
         List<String> relatedSearch = new ArrayList<>();
         int maxNum = Math.min(4, docs.size());
         for (int i = 0; i < maxNum; i++) {
-            relatedSearch.add(calRelatedSearch(docs.get(i)));
+            relatedSearch.add(calRelatedSearch(docs.get(i).getCaption(), keyWord));
         }
         return relatedSearch;
+    }
+
+    // 计算单个分词的IDF  （未考虑单词与query关联度）
+    public BigDecimal calWordIDF(String word, long docTotalNum) {
+        // 包含分词的文档数目
+        long wordDocNum = indexPartialStorage.getIndexPartial(word).getTempDataList().size();
+        BigDecimal wordIDF = BigDecimal.valueOf(Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5)));
+        return wordIDF;
+    }
+
+    public String calRelatedSearch(String caption, String keyWord) throws IOException {
+        // 对文档分词
+        List<String> wordList = wordSegmentation.segmentToWordList(caption);
+        String relatedQuery = keyWord;
+        // 如果keyWord是最后一个词语那么直接返回了
+        for (int i = 0; i < wordList.size() - 1; i++) {
+            String word = wordList.get(i);
+            if (word.equals(keyWord)) {
+                relatedQuery += wordList.get(i + 1);
+                break;
+            }
+        }
+        return relatedQuery;
     }
 
     // 计算单词的IDF
@@ -95,41 +135,5 @@ public  class SortLogic {
             word2Num.put(word, word2Num.getOrDefault(word, BigDecimal.valueOf(0)).add(BigDecimal.valueOf(1)));
         }
         return word2Num;
-    }
-
-    private String calRelatedSearch(Doc doc) {
-
-        //1.对文档分词,并得到词频
-        Map<String, Integer> word2Num = null;
-        try {
-            word2Num = segmentation.segment(doc.getCaption());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
-
-        //2.判断IDF是否为空并计算IDF
-        if(word2IDF.isEmpty()){
-            long docNum = docLenStorage.getDocTotalNum();
-            word2IDF = calIDF(docNum);
-        }
-        //4.根据TF-IDF计算关键字
-        PriorityQueue<Word4Sort> topKeywords = new PriorityQueue<>();
-        for(String word: word2Num.keySet()){
-            if (word2IDF.containsKey(word)) {
-                BigDecimal tf_idf = BigDecimal.valueOf(word2Num.get(word)).multiply(word2IDF.get(word));
-                if(topKeywords.size() < relatedKeywordNum || tf_idf.compareTo(topKeywords.peek().getTf_idf()) > 0){
-                    topKeywords.remove(topKeywords.peek());
-                    topKeywords.add(new Word4Sort(word,tf_idf));
-                }
-            }
-        }
-
-        StringBuilder builder = new StringBuilder();
-        for(Word4Sort word: topKeywords){
-            builder.append(word.getWord());
-        }
-
-        return builder.toString();
     }
 }
