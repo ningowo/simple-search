@@ -1,15 +1,18 @@
 package team.snof.simplesearch.search.storage;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
+import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.model.dao.index.TempData;
 
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

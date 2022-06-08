@@ -32,12 +32,19 @@ public class DocLenStorage {
                 Aggregation.group("_class").avg("docLen").as("avgLen")
         );
         List<Map> results = mongoTemplate.aggregate(aggregation, "doc_length", Map.class).getMappedResults();
+        if (results.isEmpty()) {
+            return 0L;
+        }
         return Math.round((Double) results.get(0).get("avgLen"));
     }
 
     public long getDocLen(long docId) {
         Query query = new Query().addCriteria(Criteria.where("docId").is(docId));
-        return mongoTemplate.findOne(query, DocLen.class, "doc_length").getDocLen();
+        DocLen doc_length = mongoTemplate.findOne(query, DocLen.class, "doc_length");
+        if (doc_length == null) {
+            return 0L;
+        }
+        return doc_length.getDocLen();
     }
 
 }
