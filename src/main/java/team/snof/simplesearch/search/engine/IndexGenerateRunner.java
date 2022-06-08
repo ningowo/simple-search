@@ -36,25 +36,19 @@ public class IndexGenerateRunner {
     public void parseAndStoreDocs(String path) throws Exception {
         // 从csv文件获取Doc
         log.info("开始读取文件...");
-        System.out.println("开始读取文件...");
         List<Doc> docList = CSVFileReader.readFile(path);
         log.info("读取文件完成，文件数量：" + docList.size());
 
         // 解析文件和存储文件
-        System.out.println("开始解析文件...");
-        log.info("开始解析...");
+        log.info("开始解析文件...");
         docParser.parse(docList);
-        System.out.println("解析完成");
         log.info("解析完成！");
-        System.out.println("解析文件和存储文件");
     }
 
     public void buildIndex() {
         log.info("开始构建索引文件...");
-        System.out.println("开始读取文件...");
         indexBuilder.buildIndexes();
-        System.out.println("构建索引并存储");
-        log.info("解析完成！");
+        log.info("索引构建完成！");
     }
 
 //    public void generateMultiple(String root, String path) throws Exception {

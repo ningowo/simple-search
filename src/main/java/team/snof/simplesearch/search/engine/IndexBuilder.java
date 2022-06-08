@@ -139,7 +139,9 @@ public class IndexBuilder {
         HashMap<String, BigDecimal> wordWeightMap = new HashMap<>();
         for (String word : wordDocNumMap.keySet()) {
             long wordDocNum = wordDocNumMap.get(word);
-            BigDecimal wordWeight = BigDecimal.valueOf(Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5)));
+            double log = Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5));
+//            System.out.println("=============" + log);
+            BigDecimal wordWeight = BigDecimal.valueOf(log);
             wordWeightMap.put(word, wordWeight);
         }
         return wordWeightMap;

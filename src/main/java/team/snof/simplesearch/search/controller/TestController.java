@@ -29,9 +29,9 @@ import java.util.Map;
  * 1. 开启redis和mongodb
  * 2. 启动项目
  * 3. 下载数据集并放到指定位置
- *      3.1 放到"D:\\ByteDanceCamp\\test20.csv"，然后直接访问http://localhost:8080/search/test/buildind?filePath=&defaultPath=true
- *      3.2 放到随便什么位置，然后访问http://localhost:8080/search/test/buildind?filePath=${随便什么位置}&defaultPath=false
- *      3.3 然后能看到console打印的"解析文件和存储文件、构建索引并存储"，即为成功
+ *      3.1 放到"D:\\ByteDanceCamp\\test20.csv"，然后直接访问http://localhost:8080/search/test/generate?filePath=&defaultPath=true
+ *      3.2 或者，放到随便什么位置，然后访问http://localhost:8080/search/test/generate?filePath=${随便什么位置}&defaultPath=false
+ *      然后能看到console打印的"解析文件和存储文件、构建索引并存储"，即为成功
  * 4. 访问http://localhost:8080/search/test/eng，即可简单测试engine.find和engine.rangeFind这两个接口
  * 5. （可选）自定义测试方法，修改engineTest方法的参数和内容，自己在controller里传参进行测试
  */
@@ -52,8 +52,48 @@ public class TestController {
     @Autowired
     MongoTemplate mongoTemplate;
 
-    @RequestMapping(value = "/buildind", method = RequestMethod.GET)
-    public ResultVO<String> buildIndex(@RequestParam String filePath, @RequestParam boolean defaultPath) throws Exception {
+    @RequestMapping("/index/parsedoc")
+    public ResultVO getAndParseFile(@RequestParam String filePath, @RequestParam boolean defaultPath) throws Exception {
+
+        String path;
+        if (defaultPath) {
+            path = "D:\\ByteDanceCamp\\test20.csv";
+        } else {
+            path = filePath;
+        }
+        runner.parseAndStoreDocs(path);
+
+        return ResultVO.newSuccessResult();
+    }
+
+    @RequestMapping("/index/build")
+    public ResultVO buildIndex() {
+
+        runner.buildIndex();
+
+        return ResultVO.newSuccessResult();
+    }
+
+    @RequestMapping("/index/findall")
+    public ResultVO findAllIndex() {
+        List<Index> all = indexStorage.findAll();
+
+        return ResultVO.newSuccessResult(all);
+    }
+
+    @RequestMapping("/findind")
+    public List<Index> findByKey(String key, boolean defaultkey) {
+        String indexKey = key;
+        if (defaultkey) {
+            indexKey = "测试1";
+        }
+        List<Index> inds = indexStorage.findByKey(indexKey);
+
+        return inds;
+    }
+
+    @RequestMapping(value = "/generate", method = RequestMethod.GET)
+    public ResultVO<String> generate(@RequestParam String filePath, @RequestParam boolean defaultPath) throws Exception {
 
         String path;
         if (defaultPath) {
@@ -110,46 +150,8 @@ public class TestController {
         return ResultVO.newSuccessResult("OK");
     }
 
-    @RequestMapping("/findind")
-    public List<Index> findByKey(String key, boolean defaultkey) {
-        String indexKey = key;
-        if (defaultkey) {
-            indexKey = "测试1";
-        }
-        List<Index> inds = indexStorage.findByKey(indexKey);
-
-        return inds;
-    }
-
-    @RequestMapping("/savefind")
-    public List<Index> indexStore(String key, boolean defaultkey) {
-        String indexKey = "测试1";
-
-        if (!defaultkey) {
-            indexKey = key;
-        }
-
-        List<DocInfo> docInfos = new ArrayList<>();
-        docInfos.add(new DocInfo(987L,new BigDecimal(0.2)));
-        docInfos.add(new DocInfo(987L,new BigDecimal(0.6)));
-        Index ind = new Index(indexKey, docInfos);
-
-        indexStorage.save(ind);
-        System.out.println(ind);
-
-        System.out.println("index----------------------");
-        List<Index> indices = indexStorage.findByKey(indexKey);
-        System.out.println(indices);
-        System.out.println("end index--------------------");
-        List<Index> all = indexStorage.findAll();
-        System.out.println(all);
-        System.out.println("end all---------------------");
-        return indices;
-    }
-
     @RequestMapping(value = "/test1", method = RequestMethod.GET)
-    public ResultVO<String> buildIndex() {
+    public ResultVO<String> test1() {
         return ResultVO.newSuccessResult("OK");
     }
-
 }
