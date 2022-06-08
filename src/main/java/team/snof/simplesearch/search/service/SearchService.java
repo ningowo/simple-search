@@ -103,7 +103,8 @@ public class SearchService {
         Map<String, Integer> segmentedWordMap = wordSegmentation.segment(query, filterWordList);
 
         // 查询引擎
-        ComplexEngineResult engineResult = engine.rangeFind(segmentedWordMap, pageNum, pageSize);
+        int limit = (pageNum - 1) * pageSize;
+        ComplexEngineResult engineResult = engine.rangeFind(segmentedWordMap, limit, pageSize);
 
         // 更新缓存
         for (Long totalDocId : engineResult.getTotalDocIds()) {

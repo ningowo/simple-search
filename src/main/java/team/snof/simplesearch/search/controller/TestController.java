@@ -68,7 +68,7 @@ public class TestController {
     }
 
     @RequestMapping(value = "/eng", method = RequestMethod.GET)
-    public ResultVO<String> engineTest() {
+    public ResultVO<String> engineTest(@RequestParam String word) {
         System.out.println("+++++++++++");
 
         List<String> words = new ArrayList<>();
@@ -87,21 +87,20 @@ public class TestController {
 //        Index ind = engine.findIndex("曾是");
 //        System.out.println(ind);
 
-        System.out.println("==================================================");
-
-        Map<String, Integer> wordToFreqMap = new HashMap<>();
-        wordToFreqMap.put("曾是", 2);
-        wordToFreqMap.put("妈妈", 1);
-        ComplexEngineResult result = engine.find(wordToFreqMap);
-        System.out.println(result.getDocs());
-        System.out.println(result.getTotalDocIds());
-        System.out.println(result.getRelatedSearch());
+//        System.out.println("==================================================");
+//
+//        Map<String, Integer> wordToFreqMap = new HashMap<>();
+//        wordToFreqMap.put("曾是", 2);
+//        wordToFreqMap.put("妈妈", 1);
+//        ComplexEngineResult result = engine.find(wordToFreqMap);
+//        System.out.println(result.getDocs());
+//        System.out.println(result.getTotalDocIds());
+//        System.out.println(result.getRelatedSearch());
 
         System.out.println("=============================");
 
         Map<String, Integer> wordToFreqMap1 = new HashMap<>();
-        wordToFreqMap1.put("曾是", 2);
-        wordToFreqMap1.put("妈妈", 1);
+        wordToFreqMap1.put(word, 2);
         ComplexEngineResult result1 = engine.rangeFind(wordToFreqMap1, 0, 2);
         System.out.println(result1.getDocs());
         System.out.println(result1.getTotalDocIds());
