@@ -68,7 +68,7 @@ public class TestController {
     }
 
     @RequestMapping(value = "/eng", method = RequestMethod.GET)
-    public ResultVO<String> engineTest() {
+    public ResultVO<String> engineTest(@RequestParam String word) {
         System.out.println("+++++++++++");
 
         List<String> words = new ArrayList<>();
@@ -87,21 +87,20 @@ public class TestController {
 //        Index ind = engine.findIndex("曾是");
 //        System.out.println(ind);
 
-        System.out.println("==================================================");
-
-        Map<String, Integer> wordToFreqMap = new HashMap<>();
-        wordToFreqMap.put("曾是", 2);
-        wordToFreqMap.put("妈妈", 1);
-        ComplexEngineResult result = engine.find(wordToFreqMap);
-        System.out.println(result.getDocs());
-        System.out.println(result.getTotalDocIds());
-        System.out.println(result.getRelatedSearch());
+//        System.out.println("==================================================");
+//
+//        Map<String, Integer> wordToFreqMap = new HashMap<>();
+//        wordToFreqMap.put("曾是", 2);
+//        wordToFreqMap.put("妈妈", 1);
+//        ComplexEngineResult result = engine.find(wordToFreqMap);
+//        System.out.println(result.getDocs());
+//        System.out.println(result.getTotalDocIds());
+//        System.out.println(result.getRelatedSearch());
 
         System.out.println("=============================");
 
         Map<String, Integer> wordToFreqMap1 = new HashMap<>();
-        wordToFreqMap1.put("曾是", 2);
-        wordToFreqMap1.put("妈妈", 1);
+        wordToFreqMap1.put(word, 2);
         ComplexEngineResult result1 = engine.rangeFind(wordToFreqMap1, 0, 2);
         System.out.println(result1.getDocs());
         System.out.println(result1.getTotalDocIds());
@@ -113,17 +112,13 @@ public class TestController {
 
     @RequestMapping("/findind")
     public List<Index> findByKey(String key, boolean defaultkey) {
+        String indexKey = key;
         if (defaultkey) {
-            Query query = new Query(Criteria.where("indexKey").is("测试1"));
-            List<Index> indices = mongoTemplate.find(query, Index.class);
-            System.out.println(indices);
-            return indices;
-        } else {
-            Query query = new Query(Criteria.where("indexKey").is(key));
-            List<Index> indices = mongoTemplate.find(query, Index.class);
-            System.out.println(indices);
-            return indices;
+            indexKey = "测试1";
         }
+        List<Index> inds = indexStorage.findByKey(indexKey);
+
+        return inds;
     }
 
     @RequestMapping("/savefind")
@@ -142,8 +137,13 @@ public class TestController {
         indexStorage.save(ind);
         System.out.println(ind);
 
-        List<Index> indices = indexStorage.findAll();
+        System.out.println("index----------------------");
+        List<Index> indices = indexStorage.findByKey(indexKey);
         System.out.println(indices);
+        System.out.println("end index--------------------");
+        List<Index> all = indexStorage.findAll();
+        System.out.println(all);
+        System.out.println("end all---------------------");
         return indices;
     }
 

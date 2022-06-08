@@ -11,6 +11,7 @@ import team.snof.simplesearch.search.model.dao.doc.Word4Sort;
 import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -60,16 +61,11 @@ public  class SortLogic {
 
     // 相关搜索分词排序
     //!考虑到doc中的关键词可能会多次出现，目前返回关键词值前三大(期望得到主谓宾结构)的不同单词作为相关搜索
-    public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap){
+    public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
         List<String> relatedSearch = new ArrayList<>();
-        /**
-         * 1-这里不需要对所有doc进行提取吧  页面若是给出10个相关搜索词条 提取前十个文档进行分析并返回即可------业务层读取list<string>的处理？？
-         *
-         * 2-（可暂时不更改 看一下效果）calRelatedSearch函数实现的是 对每个文档计算三个关键词拼接为相关搜索词  作为query的相关搜索词条
-         * 这样算出来的很可能和原始query没有关系  我们应该是针对query计算10个相关搜索词即可
-         */
-        for(Doc doc:docs){
-            relatedSearch.add(calRelatedSearch(doc.getSnowflakeDocId(), wordToFreqMap));
+        int maxNum = Math.min(4, docs.size());
+        for (int i = 0; i < maxNum; i++) {
+            relatedSearch.add(calRelatedSearch(docs.get(i)));
         }
         return relatedSearch;
     }
@@ -101,10 +97,17 @@ public  class SortLogic {
         return word2Num;
     }
 
-    private String calRelatedSearch(Long docId, Map<String, Integer> word2Num){
-        /**
-         这里就是没有管query了  单纯对文档分析 得到文档的三个关键词作为相关搜索词条
-         */
+    private String calRelatedSearch(Doc doc) {
+
+        //1.对文档分词,并得到词频
+        Map<String, Integer> word2Num = null;
+        try {
+            word2Num = segmentation.segment(doc.getCaption());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+
         //2.判断IDF是否为空并计算IDF
         if(word2IDF.isEmpty()){
             long docNum = docLenStorage.getDocTotalNum();
@@ -124,7 +127,7 @@ public  class SortLogic {
 
         StringBuilder builder = new StringBuilder();
         for(Word4Sort word: topKeywords){
-            builder.append(word);
+            builder.append(word.getWord());
         }
 
         return builder.toString();

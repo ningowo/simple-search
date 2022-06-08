@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.config;
+package team.snof.simplesearch.common.logging;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

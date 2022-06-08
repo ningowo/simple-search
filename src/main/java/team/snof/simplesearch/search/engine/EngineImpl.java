@@ -41,17 +41,17 @@ public class EngineImpl implements Engine {
     //返回指定文档结果
     public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit){
         // 获取分词
-        List<String> words = new ArrayList<>();
-        for(String word : wordToFreqMap.keySet()) words.add(word);
+        List<String> words = new ArrayList<>(wordToFreqMap.keySet());
 
         List<Index> indexs = batchFindIndexes(words);
         List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
         List<Long> partialDocIds = new ArrayList<>();
-        for(int i = offset, upper = offset + limit; i < docIds.size() && i < upper; ++i){//避免越界
+        for(int i = offset; i < docIds.size() && i < offset + limit; ++i){//避免越界
             partialDocIds.add(docIds.get(i));
         }
         List<Doc> docs = batchFindDocs(partialDocIds);
-        return new ComplexEngineResult(docs,docIds,sortLogic.wordSort(docs, wordToFreqMap));
+        List<String> relatedSearches = sortLogic.wordSort(docs, wordToFreqMap);
+        return new ComplexEngineResult(docs,docIds, relatedSearches);
     }
 
     // 文档查询
