@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="team.snof.simplesearch.user.mapper.favourite.DatasetMapper">
+
+    <resultMap id="BaseResultMap" type="team.snof.simplesearch.user.model.bo.favorite.Dataset">
+        <id column="id" property="id" />
+        <result column="url" property="url" />
+        <result column="caption" property="caption" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, url, caption
+    </sql>
+    <select id="searchDataSet" parameterType="list" resultType="team.snof.simplesearch.user.model.bo.favorite.Dataset">
+        select * from dataset where id in (
+        <foreach collection="collectionList" item="Collection" separator=",">
+            #{Collection.dataId}
+        </foreach>
+        )
+    </select>
+
+
+</mapper>

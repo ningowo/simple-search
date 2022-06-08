@@ -1,9 +1,10 @@
 package team.snof.simplesearch.search.engine;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.common.util.OssUtil;
+import team.snof.simplesearch.search.storage.OssStorage;
 import team.snof.simplesearch.common.util.SnowFlakeIDGenerator;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
@@ -13,21 +14,10 @@ import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 public class DocParser {
-    private static final int CORE_POOL_SIZE = 10;
-    private static final int MAXIMUM_POOL_SIZE = 10;
-    private static final long KEEP_ALIVE_TIME = 30;
-    private ThreadPoolExecutor executor = new ThreadPoolExecutor(
-            CORE_POOL_SIZE,
-            MAXIMUM_POOL_SIZE,
-            KEEP_ALIVE_TIME,
-            TimeUnit.SECONDS,
-            new ArrayBlockingQueue<>(1000, false));
 
     @Autowired
     WordSegmentation wordSegmentation;
@@ -37,7 +27,6 @@ public class DocParser {
 
     @Autowired
     DocLenStorage docLenStorage;
-
 
     // 解析doc，并获得索引所需参数
     public void parse(List<Doc> docList) throws Exception {
@@ -73,6 +62,6 @@ public class DocParser {
 
         // 储存文档
         Doc doc = new Doc(docId, url, caption);
-        OssUtil.addDoc(doc);
+        OssStorage.addDoc(doc);
     }
 }

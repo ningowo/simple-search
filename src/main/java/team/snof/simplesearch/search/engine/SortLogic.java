@@ -13,34 +13,33 @@ import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 @Component
 public  class SortLogic {
-    @Autowired
-    static EngineImpl engineImpl;
-    @Autowired
-    static DocLenStorage docLenStorage;
-    @Autowired
-    static IndexPartialStorage indexPartialStorage;
-    @Autowired
-    static WordSegmentation segmentation;
 
-    private static HashMap<String,BigDecimal> word2IDF;
+    @Autowired
+    DocLenStorage docLenStorage;
+    @Autowired
+    IndexPartialStorage indexPartialStorage;
+    @Autowired
+    WordSegmentation segmentation;
+
+    private static HashMap<String,BigDecimal> word2IDF = new HashMap<>();
     //private static final int relatedResultNum = 10; //相关检索数目
     private static final int relatedKeywordNum = 3; //每个相关搜索关联的关键字个数
     private static final double k_3 = 1.5;  // k3  1.2~2
 
     //文档排序
-    public static List<Long> docSort(List<Index> indexs, Map<String, Integer> wordToFreqMap) {
+    public List<Long> docSort(List<Index> indexs, Map<String, Integer> wordToFreqMap) {
         //1.计算文档对应的相似度
         HashMap<Long, BigDecimal> doc2Similarity = new HashMap<>();//kv <docID,similarity>
         for (Index index : indexs) {
             String word = index.getIndexKey();
             for (DocInfo doc : index.getDocInfoList()) {
                 BigDecimal corr = doc.getCorr().multiply(new BigDecimal((k_3 + 1) * wordToFreqMap.get(word)))
-                        .divide(new BigDecimal(k_3 + wordToFreqMap.get(word)));
-                //System.out.println(corr.toString());
+                        .divide(new BigDecimal(k_3 + wordToFreqMap.get(word)), 3, RoundingMode.HALF_EVEN);
                 doc2Similarity.put(doc.getDocId(), doc2Similarity.getOrDefault(doc.getDocId(), new BigDecimal(0)).add(corr));
             }
 
@@ -57,23 +56,23 @@ public  class SortLogic {
 
         for(Doc4Sort doc:docs){
             orderedDocs.add(doc.getDocId());
-            //System.out.printf("%d %f\n",doc.DocId,Double.valueOf(doc.similarity.toString()));
         }
         return orderedDocs;
     }
 
     // 相关搜索分词排序
     //!考虑到doc中的关键词可能会多次出现，目前返回关键词值前三大(期望得到主谓宾结构)的不同单词作为相关搜索
-    public static List<String> wordSort(List<Doc> docs){
+    public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
         List<String> relatedSearch = new ArrayList<>();
-        for(Doc doc:docs){
-            relatedSearch.add(calRelatedSearch(doc.getSnowflakeDocId()));
+        int maxNum = Math.min(4, docs.size());
+        for (int i = 0; i < maxNum; i++) {
+            relatedSearch.add(calRelatedSearch(docs.get(i)));
         }
         return relatedSearch;
     }
 
     // 计算单词的IDF
-    private static HashMap<String, BigDecimal> calIDF(long doc_num) {
+    private HashMap<String, BigDecimal> calIDF(long doc_num) {
         // 1. 统计包含某个分词的文档个数  <word,wordDocNum>
         List<String> wordListTotal = indexPartialStorage.getAllIndexPartialWord();
         HashMap<String, Long> word2FreqMap = indexPartialStorage.getWordDocNum(wordListTotal);
@@ -89,7 +88,7 @@ public  class SortLogic {
     }
 
     // 计算某一文档的词频
-    private  static HashMap<String,BigDecimal> calTF(List<String> wordList){
+    private HashMap<String,BigDecimal> calTF(List<String> wordList){
         // <word,term frequency>
         HashMap<String,BigDecimal> word2Num = new HashMap<>();
 
@@ -99,35 +98,40 @@ public  class SortLogic {
         return word2Num;
     }
 
-    private static String calRelatedSearch(Long docId) throws IOException {
-        //1.对文档分词
-        Doc doc = engineImpl.findDoc(docId);
-        List<String> wordList = segmentation.segment(doc.getCaption());
+    private String calRelatedSearch(Doc doc) {
+
+        //1.对文档分词,并得到词频
+        Map<String, Integer> word2Num = null;
+        try {
+            word2Num = segmentation.segment(doc.getCaption());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
 
         //2.判断IDF是否为空并计算IDF
-        if(word2IDF.size() == 0){
-            Long docNum = docLenStorage.getDocTotalNum();
+        if(word2IDF.isEmpty()){
+            long docNum = docLenStorage.getDocTotalNum();
             word2IDF = calIDF(docNum);
         }
 
-        //3.计算TF
-        HashMap<String,BigDecimal> word2Num = calTF(wordList);
-
         //4.根据TF-IDF计算关键字
         PriorityQueue<Word4Sort> topKeywords = new PriorityQueue<>();
-        for(String word: wordList){
-            BigDecimal tf_idf = word2Num.get(word).multiply(word2IDF.get(word));
-            if(topKeywords.size() < relatedKeywordNum || tf_idf.compareTo(topKeywords.peek().getTf_idf()) == 1){
-                topKeywords.remove(topKeywords.peek());
-                topKeywords.add(new Word4Sort(word,tf_idf));
+        for(String word: word2Num.keySet()){
+            if (word2IDF.containsKey(word)) {
+                BigDecimal tf_idf = BigDecimal.valueOf(word2Num.get(word)).multiply(word2IDF.get(word));
+                if(topKeywords.size() < relatedKeywordNum || tf_idf.compareTo(topKeywords.peek().getTf_idf()) > 0){
+                    topKeywords.remove(topKeywords.peek());
+                    topKeywords.add(new Word4Sort(word,tf_idf));
+                }
             }
         }
 
-        String result = new String();
+        StringBuilder builder = new StringBuilder();
         for(Word4Sort word: topKeywords){
-            result = result + word.getWord();
+            builder.append(word.getWord());
         }
 
-        return result;
+        return builder.toString();
     }
 }

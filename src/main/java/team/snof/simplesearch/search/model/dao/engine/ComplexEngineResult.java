@@ -5,12 +5,20 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+
+import lombok.NoArgsConstructor;
 import  team.snof.simplesearch.search.model.dao.doc.Doc;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class ComplexEngineResult {
-    List<Doc> docs; //整体查询时返回全部文档，区间查询时返回指定范围内的文档
+
+    //整体查询时返回全部文档，区间查询时返回指定范围内的文档
+    List<Doc> docs;
+
     List<Long> totalDocIds;
+
     List<String> relatedSearch;
+
 }
