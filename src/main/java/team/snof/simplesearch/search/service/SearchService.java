@@ -9,8 +9,10 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.adaptor.SearchAdaptor;
+import team.snof.simplesearch.search.engine.Engine;
 import team.snof.simplesearch.search.engine.EngineImpl;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.vo.DocVO;
@@ -31,7 +33,7 @@ public class SearchService {
     private static Integer DEFAULT_PAGE_SIZE = 30;
 
     @Autowired
-    EngineImpl engine;
+    Engine engine;
 
     @Autowired
     WordSegmentation wordSegmentation;
@@ -49,7 +51,6 @@ public class SearchService {
             pageNum = 1;
             pageSize = DEFAULT_PAGE_SIZE;
         }
-
 
         // 获取过滤词信息
         List<Long> filterDocIds = getFilterDocIds(filterWordList);
@@ -149,8 +150,8 @@ public class SearchService {
         // 从索引获取所有要过滤的docids
         List<Long> filterDocIds = new ArrayList<>();
         for (Index index : indices) {
-            List<Pair<Long, BigDecimal>> docIdAndCorrList = index.getDocIdAndCorrList();
-            List<Long> docIds = docIdAndCorrList.stream().map(Pair::getLeft).collect(Collectors.toList());
+            List<DocInfo> docIdAndCorrList = index.getDocInfoList();
+            List<Long> docIds = docIdAndCorrList.stream().map(DocInfo::getDocId).collect(Collectors.toList());
             filterDocIds.addAll(docIds);
         }
 
@@ -168,24 +169,24 @@ public class SearchService {
     }
 
 
-    public String test() {
-        // 测试redis
-        redisTemplate.setValueSerializer(RedisSerializer.json());
-        String key = "key1";
-        List<String> value = new ArrayList<>();
-        value.add("1");
-        value.add("2");
-        value.add("3");
-        Doc doc = new Doc();
-        doc.setCaption("qhwkjehqwkj");
-        doc.setUrl("www.baidu.com");
-
-        redisTemplate.opsForValue().set("doc", doc);
-        System.out.println(redisTemplate.opsForValue().get("doc"));
-
-        Long size = redisTemplate.opsForList().size(key);
-
-        return "Result: " + size;
-    }
+//    public String test() {
+//        // 测试redis
+//        redisTemplate.setValueSerializer(RedisSerializer.json());
+//        String key = "key1";
+//        List<String> value = new ArrayList<>();
+//        value.add("1");
+//        value.add("2");
+//        value.add("3");
+//        Doc doc = new Doc();
+//        doc.setCaption("qhwkjehqwkj");
+//        doc.setUrl("www.baidu.com");
+//
+//        redisTemplate.opsForValue().set("doc", doc);
+//        System.out.println(redisTemplate.opsForValue().get("doc"));
+//
+//        Long size = redisTemplate.opsForList().size(key);
+//
+//        return "Result: " + size;
+//    }
 
 }

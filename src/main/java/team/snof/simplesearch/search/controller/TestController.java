@@ -113,17 +113,13 @@ public class TestController {
 
     @RequestMapping("/findind")
     public List<Index> findByKey(String key, boolean defaultkey) {
+        String indexKey = key;
         if (defaultkey) {
-            Query query = new Query(Criteria.where("indexKey").is("测试1"));
-            List<Index> indices = mongoTemplate.find(query, Index.class);
-            System.out.println(indices);
-            return indices;
-        } else {
-            Query query = new Query(Criteria.where("indexKey").is(key));
-            List<Index> indices = mongoTemplate.find(query, Index.class);
-            System.out.println(indices);
-            return indices;
+            indexKey = "测试1";
         }
+        List<Index> inds = indexStorage.findByKey(indexKey);
+
+        return inds;
     }
 
     @RequestMapping("/savefind")
@@ -142,8 +138,13 @@ public class TestController {
         indexStorage.save(ind);
         System.out.println(ind);
 
-        List<Index> indices = indexStorage.findAll();
+        System.out.println("index----------------------");
+        List<Index> indices = indexStorage.findByKey(indexKey);
         System.out.println(indices);
+        System.out.println("end index--------------------");
+        List<Index> all = indexStorage.findAll();
+        System.out.println(all);
+        System.out.println("end all---------------------");
         return indices;
     }
 

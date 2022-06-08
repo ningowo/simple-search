@@ -18,7 +18,7 @@ import java.util.TimeZone;
 @EnableRedisRepositories
 @EnableSwagger2
 @SpringBootApplication
-@MapperScan("team.snof")
+@MapperScan("team.snof.simplesearch.user.mapper")
 @EntityScan(basePackageClasses = {
         SimpleSearchApplication.class,
         Jsr310JpaConverters.class
