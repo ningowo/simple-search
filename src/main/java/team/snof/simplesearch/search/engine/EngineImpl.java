@@ -1,76 +1,121 @@
 package team.snof.simplesearch.search.engine;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.storage.OssStorage;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
+import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.index.Index;
+import org.springframework.data.redis.core.RedisTemplate;
+import team.snof.simplesearch.search.storage.IndexStorage;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
-/**
- * @author zhouyg
- * @date 2022/6/7
- */
 @Component
-public class EngineImpl implements Engine{
-    @Override
-    public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit) {
+public class EngineImpl implements Engine {
+
+    @Autowired
+    IndexStorage indexStorage;
+
+    @Autowired
+    RedisTemplate redisTemplate;
+
+    @Autowired
+    SortLogic sortLogic;
+
+    private final String indexRedisFormat = "engine:index:%s:string";//索引redis格式串
+    private final int expireDuration = 10;//倒排索引缓存时间(min)
+    //返回全部文档结果
+    public ComplexEngineResult find(Map<String, Integer> wordToFreqMap){
+         // 获取分词
+         List<String> words = new ArrayList<>();
+         for(String word : wordToFreqMap.keySet()) words.add(word);
+
+         List<Index> indexs = batchFindIndexes(words);
+         List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
+         List<Doc> docs = batchFindDocs(docIds);
+         return new ComplexEngineResult(docs,docIds,sortLogic.wordSort(docs, wordToFreqMap));
+//        return new ComplexEngineResult();
+    }
+
+    //返回指定文档结果
+    public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit){
+        // 获取分词
+        List<String> words = new ArrayList<>();
+        for(String word : wordToFreqMap.keySet()) words.add(word);
+
+        List<Index> indexs = batchFindIndexes(words);
+        List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
+        List<Long> partialDocIds = new ArrayList<>();
+        for(int i = offset, upper = offset + limit; i < docIds.size() && i < upper; ++i){//避免越界
+            partialDocIds.add(docIds.get(i));
+        }
+        List<Doc> docs = batchFindDocs(partialDocIds);
+        return new ComplexEngineResult(docs,docIds,sortLogic.wordSort(docs, wordToFreqMap));
+    }
+
+    // 文档查询
+    public Doc findDoc(Long docId){
+        return OssStorage.getBySnowId(docId);
+    }
+
+    //批查询文档
+    public List<Doc> batchFindDocs(List<Long> docIds){// 常用
         List<Doc> docs = new ArrayList<>();
-        docs.add(new Doc(1L,"img1", "字节跳动1"));
-        docs.add(new Doc(2L,"img2", "字节跳动2"));
-        docs.add(new Doc(3L,"img3", "字节跳动3"));
-
-        List<Long> totalDocIds = new ArrayList<>();
-        totalDocIds.add(1L);
-        totalDocIds.add(2L);
-        totalDocIds.add(3L);
-
-        List<String> relatedSearch = new ArrayList<>();
-        relatedSearch.add("字节");
-        relatedSearch.add("跳动");
-        ComplexEngineResult complexEngineResult = new ComplexEngineResult(docs, totalDocIds, relatedSearch);
-        return complexEngineResult;
+        for(Long docId: docIds){
+            docs.add(OssStorage.getBySnowId(docId));
+        }
+        return docs;
     }
 
-    @Override
-    public List<Doc> batchFindDocs(List<Long> docIds) {
-        List<Doc> list = new ArrayList<>();
-        list.add(new Doc(1L,"img1", "字节跳动1"));
-        return list;
+    // 索引查询
+    public Index findIndex(String word){
+        //redis查询
+        String wordRedisKey = String.format(indexRedisFormat,word);
+        Index index = (Index)redisTemplate.opsForValue().get(wordRedisKey);
+
+        //判断是否有缓存
+        if (index == null) {
+            index = indexStorage.findByKey(word).get(0);
+            redisTemplate.opsForValue().set(wordRedisKey, index);
+            redisTemplate.expire(wordRedisKey, expireDuration, TimeUnit.MINUTES);
+        }
+        return index;
     }
 
-    @Override
-    public List<Index> batchFindIndexes(List<String> words) {
-        List<Index> res = new ArrayList<>();
-        List<Pair<Long, BigDecimal>> list = new ArrayList<>();
-        Pair<Long, BigDecimal> pair = new ImmutablePair<Long, BigDecimal>(1L, new BigDecimal(1231231.232));
-        list.add(pair);
-        Index index = new Index(1L, list);
-        res.add(new Index(1L, list));
-        res.add(new Index(2L, list));
-        res.add(new Index(3L, list));
-        return res;
+    /**
+     * 只返回非空索引
+     * @param words
+     * @return
+     */
+    public List<Index> batchFindIndexes(List<String> words){
+        if (words.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        //redis查询
+        // 构建Redis查询keys
+        List<String> wordRedisKeys = new ArrayList<>(words.size());
+        for(int i = 0; i < words.size(); ++i){
+            wordRedisKeys.add(i, String.format(indexRedisFormat,words.get(i)));
+        }
+        List<Index> indexs = redisTemplate.opsForValue().multiGet(wordRedisKeys);
+
+        //判断是否有缓存
+        for(int i = 0; i < indexs.size(); ++i) {
+            if(indexs.get(i) == null){
+                // 查数据库
+                List<Index> index = indexStorage.findByKey(words.get(i));
+                if (index.isEmpty()) {
+                    continue;
+                }
+
+                indexs.set(i, index.get(0));
+                redisTemplate.opsForValue().set(wordRedisKeys.get(i), indexs.get(i));
+                redisTemplate.expire(wordRedisKeys.get(i), expireDuration, TimeUnit.MINUTES);
+            }
+        }
+        indexs.removeIf(Objects::isNull);
+        return indexs;
     }
-
-    @Override
-    public ComplexEngineResult find(Map<String, Integer> wordToFreqMap) {
-        return null;
-    }
-
-    @Override
-    public Doc findDoc(Long docId) {
-        return null;
-    }
-
-    @Override
-    public Index findIndex(String word) {
-        return null;
-    }
-
-
 }

@@ -1,18 +1,21 @@
 package team.snof.simplesearch.search.model.dao.doc;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+
+import java.io.Serializable;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
-public class Doc {
+public class Doc implements Serializable {
 
-    private Long SnowflakeDocId;
+    public Long SnowflakeDocId;
 
-    private String url;
+    public String url;
 
-    private String caption;
+    public String caption;
 
 }
