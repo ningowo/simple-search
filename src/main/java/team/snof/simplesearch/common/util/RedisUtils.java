@@ -413,6 +413,20 @@ public class RedisUtils {
     }
 
     /**
+     * 获取list缓存的全部内容
+     * @param key   键
+     * @return
+     */
+    public List<Object> lGetAll(String key) {
+        try {
+            return redisTemplate.opsForList().range(key, 0, -1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
      * 获取list缓存的长度
      * @param key 键
      * @return

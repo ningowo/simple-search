@@ -19,7 +19,6 @@ import java.time.Duration;
 
 @Configuration
 @ConditionalOnClass(RedisOperations.class)
-@EnableConfigurationProperties(RedisProperties.class)
 @AutoConfigureAfter(RedisAutoConfiguration.class)
 public class RedisConfig extends CachingConfigurerSupport {
 

@@ -16,7 +16,7 @@ public class WordSegmentation {
         IKSegmenter ik = new IKSegmenter(sr, true);
         Lexeme lex = null;
         Set<String> filterSet = new HashSet<>(filterWords);
-        Map<String, Integer> map = new HashMap<>();
+        HashMap<String, Integer> map = new HashMap<>();
         while((lex=ik.next())!=null){
             String segmentedWord = lex.getLexemeText();
             if (!filterSet.contains(segmentedWord)) {

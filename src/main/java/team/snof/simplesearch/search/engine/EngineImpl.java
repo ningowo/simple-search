@@ -52,6 +52,10 @@ public class EngineImpl implements Engine {
         return sortLogic.docSort(indexs,wordToFreqMap);
     }
 
+    public List<String> findRelatedSearch(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
+        return sortLogic.wordSort(docs, wordToFreqMap);
+    }
+
     //返回指定文档结果
     public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit){
         // 获取分词

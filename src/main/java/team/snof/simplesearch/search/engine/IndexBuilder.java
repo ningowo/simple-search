@@ -140,8 +140,7 @@ public class IndexBuilder {
         for (String word : wordDocNumMap.keySet()) {
             long wordDocNum = wordDocNumMap.get(word);
             double log = Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5));
-//            System.out.println("=============" + log);
-            BigDecimal wordWeight = BigDecimal.valueOf(log);
+            BigDecimal wordWeight = new BigDecimal(log);
             wordWeightMap.put(word, wordWeight);
         }
         return wordWeightMap;
