@@ -1,16 +1,11 @@
 package team.snof.simplesearch.search.service;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.BoundHashOperations;
-import org.springframework.data.redis.core.BoundListOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
+import team.snof.simplesearch.common.util.RedisUtils;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.adaptor.SearchAdaptor;
 import team.snof.simplesearch.search.engine.Engine;
-import team.snof.simplesearch.search.engine.EngineImpl;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
@@ -20,11 +15,7 @@ import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 import team.snof.simplesearch.search.model.vo.SearchResponseVO;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -39,7 +30,7 @@ public class SearchService {
     WordSegmentation wordSegmentation;
 
     @Autowired
-    private RedisTemplate redisTemplate;
+    RedisUtils redisUtils;
 
     public SearchResponseVO search(SearchRequestVO request) throws IOException {
         // 获取请求参数
@@ -56,31 +47,47 @@ public class SearchService {
             pageSize = DEFAULT_PAGE_SIZE;
         }
 
-        // 获取过滤词信息
-        List<Long> filterDocIds = getFilterDocIds(filterWordList);
-
-        // 如缓存中没有该query
         // 分词
-        Map<String, Integer> segmentedWordMap = wordSegmentation.segment(query, filterWordList);
+        HashMap<String, Integer> wordToFreqMap = wordSegmentation.segment(query, filterWordList);
+        // 如果query中有过滤词，在这一步直接过滤掉
+        for (String word : wordToFreqMap.keySet()) {
+            if (filterWordList.contains(word)) {
+                wordToFreqMap.remove(word);
+            }
+        }
 
-        if (redisTemplate.hasKey(queryCacheKey) &&) {
+        // 获取过滤词信息
+        List<Long> filterDocIds = findDocIdsByWord(filterWordList);
+        
+        if (filterDocIds.isEmpty()) {
+            String queryToDocIdsCacheKey = "search:page:" + query + ":list";
+            String queryToRelatedSearchKey = "search:related:" + query + ":list";
+            searchEngineOrCacheForDocIds(queryToDocIdsCacheKey, queryToRelatedSearchKey, wordToFreqMap);
         }
 
     }
 
-    private boolean hasValidCache(boolean doFilter) {
+    // 这里因为引擎层的
+    private List<Long> searchEngineOrCacheForDocIds(String queryToDocIdsCacheKey, String queryRelatedSearchKey, HashMap<String, Integer> wordToFreqMap) {
+        // 这里先全部查出来，在业务侧做筛选。不然担心有一开始hasKey是true，get时缓存过期的情况。之后再优化。
+        List<Object> docIdObjects = redisUtils.lGet(queryToDocIdsCacheKey, 0, -1);
+
+        // 如果缓存里有
+        if (!docIdObjects.isEmpty()) {
+            return docIdObjects.stream().map(doc -> (Long) doc).collect(Collectors.toList());
+        } else { // 如果redis里不存在或者过期了
+            engine.find(wordToFreqMap)
+        }
+
 
     }
 
+//    private boolean hasValidCache(String key) {
+//        return redisUtils.hasKey(key);
+//    }
+
     private SearchResponseVO searchCache(boolean doFilter) {
         // 查询缓存
-        redisTemplate.setKeySerializer(RedisSerializer.json());
-        redisTemplate.setValueSerializer(RedisSerializer.json());
-        String queryCacheKey = "search:page:" + query + ":list";
-        String queryRelatedSearchKey = "search:related:" + query + ":list";;
-
-        BoundListOperations queryCache = redisTemplate.boundListOps(queryCacheKey);
-        BoundHashOperations queryRelatedSearchCache = redisTemplate.boundHashOps(queryRelatedSearchKey);
 
         request.setTotal(queryCache.size());
 
@@ -161,13 +168,13 @@ public class SearchService {
                 .build();
     }
 
-    private List<Long> getFilterDocIds(List<String> filterWordList) {
-        if (filterWordList.isEmpty()) {
+    private List<Long> findDocIdsByWord(List<String> words) {
+        if (words.size() == 0) {
             return Collections.emptyList();
         }
 
         // 获取过滤词对应索引
-        List<Index> indices = engine.batchFindIndexes(filterWordList);
+        List<Index> indices = engine.batchFindIndexes(words);
         // 从索引获取所有要过滤的docids
         List<Long> filterDocIds = new ArrayList<>();
         for (Index index : indices) {

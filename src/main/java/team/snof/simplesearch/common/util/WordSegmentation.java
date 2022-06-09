@@ -11,7 +11,7 @@ import java.util.*;
 @Component
 public class WordSegmentation {
 
-    public Map<String, Integer> segment(String msg, List<String> filterWords) throws IOException {
+    public HashMap<String, Integer> segment(String msg, List<String> filterWords) throws IOException {
         StringReader sr = new StringReader(msg);
         IKSegmenter ik = new IKSegmenter(sr, true);
         Lexeme lex = null;

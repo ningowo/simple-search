@@ -27,15 +27,29 @@ public class EngineImpl implements Engine {
     private final int expireDuration = 10;//倒排索引缓存时间(min)
     //返回全部文档结果
     public ComplexEngineResult find(Map<String, Integer> wordToFreqMap){
-         // 获取分词
-         List<String> words = new ArrayList<>();
-         for(String word : wordToFreqMap.keySet()) words.add(word);
+        // 获取索引
+        List<String> words = new ArrayList<>(wordToFreqMap.keySet());
+        List<Index> indexs = batchFindIndexes(words);
 
-         List<Index> indexs = batchFindIndexes(words);
-         List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
-         List<Doc> docs = batchFindDocs(docIds);
-         return new ComplexEngineResult(docs,docIds,sortLogic.wordSort(docs, wordToFreqMap));
-//        return new ComplexEngineResult();
+        // 文档排序
+        List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
+
+        // 获取文档
+        List<Doc> docs = batchFindDocs(docIds);
+
+        // 计算相关搜索结果
+        List<String> relatedSearches = sortLogic.wordSort(docs, wordToFreqMap);
+
+        return new ComplexEngineResult(docs, docIds, relatedSearches);
+    }
+
+    public List<Long> findSortedDocIds(Map<String, Integer> wordToFreqMap) {
+        // 获取索引
+        List<String> words = new ArrayList<>(wordToFreqMap.keySet());
+        List<Index> indexs = batchFindIndexes(words);
+
+        // 文档排序
+        return sortLogic.docSort(indexs,wordToFreqMap);
     }
 
     //返回指定文档结果
