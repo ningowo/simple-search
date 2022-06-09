@@ -4,6 +4,9 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
+
 @Getter
 @Setter
 @ToString
@@ -12,9 +15,11 @@ import lombok.*;
 @NoArgsConstructor
 public class PageQueryVO {
 
+    @Min(value = 1, message = "每页数量不能小于0")
     @ApiModelProperty(value = "每页数量")
     protected Integer pageSize;
 
+    @Min(value = 1, message = "页码不能小于0")
     @ApiModelProperty(value = "当前页码")
     protected Integer pageNum;
 

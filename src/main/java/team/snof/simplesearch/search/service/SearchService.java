@@ -42,19 +42,37 @@ public class SearchService {
     private RedisTemplate redisTemplate;
 
     public SearchResponseVO search(SearchRequestVO request) throws IOException {
-        List<String> filterWordList = request.getFilterWordList();
+        // 获取请求参数
         String query = request.getQuery();
+        List<String> filterWordList = request.getFilterWordList();
         Integer pageNum = request.getPageNum();
         Integer pageSize = request.getPageSize();
-        if (pageNum == null || pageNum <= 0
-                || pageSize == null || pageSize <= 0) {
+
+        // 已在分页实体类限制页码和每页数量大于0，这里只处理null值
+        if (pageNum == null) {
             pageNum = 1;
+        }
+        if (pageSize == null) {
             pageSize = DEFAULT_PAGE_SIZE;
         }
 
         // 获取过滤词信息
         List<Long> filterDocIds = getFilterDocIds(filterWordList);
 
+        // 如缓存中没有该query
+        // 分词
+        Map<String, Integer> segmentedWordMap = wordSegmentation.segment(query, filterWordList);
+
+        if (redisTemplate.hasKey(queryCacheKey) &&) {
+        }
+
+    }
+
+    private boolean hasValidCache(boolean doFilter) {
+
+    }
+
+    private SearchResponseVO searchCache(boolean doFilter) {
         // 查询缓存
         redisTemplate.setKeySerializer(RedisSerializer.json());
         redisTemplate.setValueSerializer(RedisSerializer.json());
@@ -64,26 +82,28 @@ public class SearchService {
         BoundListOperations queryCache = redisTemplate.boundListOps(queryCacheKey);
         BoundHashOperations queryRelatedSearchCache = redisTemplate.boundHashOps(queryRelatedSearchKey);
 
+        request.setTotal(queryCache.size());
+
         // Redis缓存：key=query，value=doc_id_list
         if (redisTemplate.hasKey(queryCacheKey)) {
-            List<Long> docIds;
+            long queryCacheSize = queryCache.size();
 
             // Redis的rlange左右都是闭区间
-            long start = (pageNum - 1) * pageSize;
-            long end = pageNum * pageSize - 1;
-
+            long start = (long) (pageNum - 1) * pageSize;
             if (start > queryCache.size() - 1) {
                 throw new IllegalArgumentException("所查询的记录超出范围!");
             }
-            end = Math.min(end, queryCache.size());
+            long end = Math.min((long) pageNum * pageSize - 1, queryCacheSize - 1);
 
-            // 从缓存查询
-            docIds = queryCache.range(start, end);
             List<String> relatedSearches = (List<String>) queryRelatedSearchCache.get(queryRelatedSearchKey);
 
-            // 过滤
-            if (!filterDocIds.isEmpty()) {
+            List<Long> docIds;
+            if (filterDocIds.isEmpty()) {
+                docIds = queryCache.range(start, end);
+            } else  {
+                docIds = queryCache.range(0, -1);
                 docIds = filterDocIdsByIds(docIds, filterDocIds);
+                docIds = docIds.subList((int) start, (int) end);
             }
 
             // 从引擎层获取doc
@@ -91,11 +111,9 @@ public class SearchService {
 
             return convertAndBuildResponse(docList, relatedSearches, request);
         }
+    }
 
-        // 如缓存中没有该query
-        // 分词
-        Map<String, Integer> segmentedWordMap = wordSegmentation.segment(query, filterWordList);
-
+    private SearchResponseVO searchDB() {
         // 查询引擎
         int limit = (pageNum - 1) * pageSize;
         ComplexEngineResult engineResult = engine.rangeFind(segmentedWordMap, limit, pageSize);
@@ -105,6 +123,7 @@ public class SearchService {
             queryCache.rightPush(totalDocId);
         }
         queryRelatedSearchCache.put(queryRelatedSearchKey, engineResult.getRelatedSearch());
+        queryCache.rightPush()
 
         List<Doc> docList;
         // 如为第一页不用重新去搜索引擎查找
@@ -161,34 +180,23 @@ public class SearchService {
     }
 
     private List<Long> filterDocIdsByIds(List<Long> docIds, List<Long> idsToFilter) {
-        return docIds.stream().filter(id -> !idsToFilter.contains(id)).collect(Collectors.toList());
+        if (idsToFilter.isEmpty()) {
+            return docIds;
+        }
+
+        return docIds.stream()
+                .filter(id -> !idsToFilter.contains(id))
+                .collect(Collectors.toList());
     }
 
     private List<Doc> filterDocsByIds(List<Doc> docs, List<Long> idsToFilter) {
+        if (idsToFilter.isEmpty()) {
+            return docs;
+        }
+
         return docs.stream()
                 .filter(doc -> !idsToFilter.contains(doc.getSnowflakeDocId()))
                 .collect(Collectors.toList());
     }
-
-
-//    public String test() {
-//        // 测试redis
-//        redisTemplate.setValueSerializer(RedisSerializer.json());
-//        String key = "key1";
-//        List<String> value = new ArrayList<>();
-//        value.add("1");
-//        value.add("2");
-//        value.add("3");
-//        Doc doc = new Doc();
-//        doc.setCaption("qhwkjehqwkj");
-//        doc.setUrl("www.baidu.com");
-//
-//        redisTemplate.opsForValue().set("doc", doc);
-//        System.out.println(redisTemplate.opsForValue().get("doc"));
-//
-//        Long size = redisTemplate.opsForList().size(key);
-//
-//        return "Result: " + size;
-//    }
 
 }
