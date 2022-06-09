@@ -27,7 +27,7 @@ public class EngineImpl implements Engine {
     private final String indexRedisFormat = "engine:index:%s:string";//索引redis格式串
     private final int expireDuration = 10;//倒排索引缓存时间(min)
     //返回全部文档结果
-    public ComplexEngineResult find(Map<String, Integer> wordToFreqMap) throws IOException {
+    public ComplexEngineResult find(Map<String, Integer> wordToFreqMap) {
          // 获取分词
          List<String> words = new ArrayList<>();
          for(String word : wordToFreqMap.keySet()) words.add(word);
@@ -40,7 +40,7 @@ public class EngineImpl implements Engine {
     }
 
     //返回指定文档结果
-    public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit) throws IOException {
+    public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit) {
         // 获取分词
         List<String> words = new ArrayList<>(wordToFreqMap.keySet());
 

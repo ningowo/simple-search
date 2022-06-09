@@ -29,7 +29,6 @@ public  class SortLogic {
 
     private static HashMap<String,BigDecimal> word2IDF = new HashMap<>();
     //private static final int relatedResultNum = 10; //相关检索数目
-    private static final int relatedKeywordNum = 3; //每个相关搜索关联的关键字个数
     private static final double k_3 = 1.5;  // k3  1.2~2
 
     //文档排序
@@ -66,25 +65,42 @@ public  class SortLogic {
      * @param wordToFreqMap
      * @return
      */
-    public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) throws IOException {
-        // 先得到query的关键词  计算wordToFreqMap中所有word的IDF  最大的作为关键词
+    public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
+        // 若分词个数为1 则取一个关键词（即该分词本身）
         long docTotalNum = docLenStorage.getDocTotalNum();
-        HashMap<String, BigDecimal> wordToIDFMap = new HashMap<>();
-        String keyWord = wordToFreqMap.keySet().iterator().next();
-        BigDecimal keyIDF = calWordIDF(keyWord, docTotalNum);
+        if (wordToFreqMap.size() == 1) {
+            String keyWord = wordToFreqMap.keySet().iterator().next();
 
-        for (String word : wordToFreqMap.keySet()) {
-            BigDecimal wordIDF = calWordIDF(word, docTotalNum);
-            if (wordIDF.compareTo(keyIDF) == 1) keyWord = word;
-        }
+            // 取docs前4个文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
+            List<String> relatedSearch = new ArrayList<>();
+            int maxNum = Math.min(4, docs.size());
+            for (int i = 0; i < maxNum; i++) {
+                relatedSearch.add(calRelatedSearch(docs.get(i).getCaption(), keyWord));
+            }
+            return relatedSearch;
+        } else {
+            // 若分词个数大于2 则这里得到两个关键词
+            // 计算wordToFreqMap中所有word的IDF  最大的两个作为关键词
+            HashMap<String, BigDecimal> wordToIDFMap = new HashMap<>();
 
-        // 取docs前4个文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
-        List<String> relatedSearch = new ArrayList<>();
-        int maxNum = Math.min(4, docs.size());
-        for (int i = 0; i < maxNum; i++) {
-            relatedSearch.add(calRelatedSearch(docs.get(i).getCaption(), keyWord));
+            for (String word : wordToFreqMap.keySet()) {
+                BigDecimal wordIDF = calWordIDF(word, docTotalNum);
+                wordToIDFMap.put(word, wordIDF);
+            }
+
+            List<Map.Entry<String, BigDecimal>> wordToIDFList = new ArrayList<>(wordToIDFMap.entrySet());
+            Collections.sort(wordToIDFList, Comparator.comparing(Map.Entry::getValue));
+            String keyWord_1 = wordToIDFList.get(wordToIDFList.size() - 1).getKey();
+            String keyWord_2 = wordToIDFList.get(wordToIDFList.size() - 2).getKey();
+
+            // 取docs前4个文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
+            List<String> relatedSearch = new ArrayList<>();
+            int maxNum = Math.min(4, docs.size());
+            for (int i = 0; i < maxNum; i++) {
+                relatedSearch.add(calRelatedSearch(docs.get(i).getCaption(), keyWord_1, keyWord_2));
+            }
+            return relatedSearch;
         }
-        return relatedSearch;
     }
 
     // 计算单个分词的IDF  （未考虑单词与query关联度）
@@ -95,15 +111,40 @@ public  class SortLogic {
         return wordIDF;
     }
 
-    public String calRelatedSearch(String caption, String keyWord) throws IOException {
+    public String calRelatedSearch(String caption, String keyWord) {
         // 对文档分词
-        List<String> wordList = wordSegmentation.segmentToWordList(caption);
-        String relatedQuery = keyWord;
+        List<String> wordList = null;
+        try {
+            wordList = wordSegmentation.segmentToWordList(caption);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String relatedQuery = "";
         // 如果keyWord是最后一个词语那么直接返回了
         for (int i = 0; i < wordList.size() - 1; i++) {
             String word = wordList.get(i);
             if (word.equals(keyWord)) {
-                relatedQuery += wordList.get(i + 1);
+                relatedQuery = word + wordList.get(i + 1);
+                break;
+            }
+        }
+        return relatedQuery;
+    }
+
+    public String calRelatedSearch(String caption, String keyWord_1, String keyWord_2) {
+        // 对文档分词
+        List<String> wordList = null;
+        try {
+            wordList = wordSegmentation.segmentToWordList(caption);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String relatedQuery = "";
+        // 如果keyWord是最后一个词语那么直接返回了
+        for (int i = 0; i < wordList.size() - 1; i++) {
+            String word = wordList.get(i);
+            if (word.equals(keyWord_1) || word.equals(keyWord_2)) {
+                relatedQuery = word + wordList.get(i + 1);
                 break;
             }
         }

@@ -11,9 +11,9 @@ import java.util.Map;
 public interface Engine {
 
     // 整体结果查询
-    ComplexEngineResult find(Map<String, Integer> wordToFreqMap) throws IOException;
+    ComplexEngineResult find(Map<String, Integer> wordToFreqMap);
 
-    ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit) throws IOException;
+    ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit);
 
     // 文档查询
     Doc findDoc(Long docId);
