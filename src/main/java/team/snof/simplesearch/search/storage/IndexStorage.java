@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
+import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
 
 import java.util.List;
@@ -33,7 +34,17 @@ public class IndexStorage {
     }
 
     public void saveBatch(List<Index> indices) {
-        mongoTemplate.insert(indices, "word_docid_corr");
+        for (Index index : indices) {
+            Query query = new Query(Criteria.where("indexKey").is(index.getIndexKey()));
+            Index oldIndex = mongoTemplate.findOne(query, Index.class, "word_docid_corr");
+            if (oldIndex == null) {
+                save(index);
+            } else {
+                List<DocInfo> docInfoList = index.getDocInfoList();
+                oldIndex.getDocInfoList().addAll(docInfoList);
+                updateByKey(oldIndex.getIndexKey(), oldIndex);
+            }
+        }
     }
 
     public Long deleteByKey(String key) {

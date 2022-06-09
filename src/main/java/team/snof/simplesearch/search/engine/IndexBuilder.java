@@ -27,8 +27,8 @@ public class IndexBuilder {
     IndexStorage indexStorage;
     @Autowired
     IndexPartialStorage indexPartialStorage;
-
-    private DocLenStorage docLenStorage;
+    @Autowired
+    DocLenStorage docLenStorage;
 
 //    ThreadPoolExecutor executor;
 
@@ -47,8 +47,7 @@ public class IndexBuilder {
 //
 //    }
 
-    @Autowired
-    public void setDocLenStorage(DocLenStorage docLenStorage){
+    public void setDocLenStorage(DocLenStorage docLenStorage) {
         this.docLenStorage = docLenStorage;
         docAveLen = docLenStorage.getDocAveLen();
         docTotalNum = docLenStorage.getDocTotalNum();
@@ -125,14 +124,15 @@ public class IndexBuilder {
                 .multiply(BigDecimal.valueOf(wordFreq)
                         .multiply(BigDecimal.valueOf(k_1 + 1))
                         .divide(BigDecimal.valueOf((k_1 * (1 - b)) + b * (double) (docLen / docAveLen) + wordFreq),
-                        3, RoundingMode.HALF_EVEN));
+                                3, RoundingMode.HALF_EVEN));
 
         return corr;
     }
+
     public HashMap<String, BigDecimal> calculateWeight(long docTotalNum, List<String> wordListTotal) {
         // 1. 统计包含某个分词的文档个数 word,wordDocNum
 
-    // 计算所有word的权重
+        // 计算所有word的权重
         HashMap<String, Long> wordDocNumMap = indexPartialStorage.getWordDocNum(wordListTotal);
 
         // 2. 计算权重

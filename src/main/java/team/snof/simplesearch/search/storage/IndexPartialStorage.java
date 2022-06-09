@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.storage;
 
+import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -7,7 +8,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
+import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
+import team.snof.simplesearch.search.model.dao.index.TempData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,8 +52,15 @@ public class IndexPartialStorage {
     // 更新操作 若已经存在则是对list扩充 不存在就插入
     public void saveIndexPartial(IndexPartial indexPartial) {
         Query query = new Query().addCriteria(Criteria.where("indexKey").is(indexPartial.getIndexKey()));
-        Update update = new Update();
-        update.set("tempDataList", indexPartial.getTempDataList());
-        mongoTemplate.upsert(query, update, IndexPartial.class, "word_temp");
+        IndexPartial word = mongoTemplate.findOne(query, IndexPartial.class, "word_temp");
+        if (word == null) {
+            mongoTemplate.save(indexPartial, "word_temp");
+        } else {
+            List<TempData> tempDataList = indexPartial.getTempDataList();
+            word.getTempDataList().addAll(tempDataList);
+            Update update = new Update();
+            update.set("tempDataList", word.getTempDataList());
+            mongoTemplate.updateFirst(query, update, Index.class, "word_temp");
+        }
     }
 }
