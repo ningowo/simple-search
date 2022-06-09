@@ -74,8 +74,13 @@ public  class SortLogic {
             // 取docs前4个文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
             List<String> relatedSearch = new ArrayList<>();
             int maxNum = Math.min(4, docs.size());
-            for (int i = 0; i < maxNum; i++) {
-                relatedSearch.add(calRelatedSearch(docs.get(i).getCaption(), keyWord));
+            for (int i = 0, j = 0; j < maxNum;) {
+                String relatedQuery = calRelatedSearch(docs.get(i).getCaption(), keyWord);
+                if (!relatedSearch.contains(relatedQuery)) {
+                    relatedSearch.add(relatedQuery);
+                    j++;
+                }
+                i++;
             }
             return relatedSearch;
         } else {
@@ -95,9 +100,14 @@ public  class SortLogic {
 
             // 取docs前4个文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
             List<String> relatedSearch = new ArrayList<>();
-            int maxNum = Math.min(4, docs.size());
-            for (int i = 0; i < maxNum; i++) {
-                relatedSearch.add(calRelatedSearch(docs.get(i).getCaption(), keyWord_1, keyWord_2));
+            int maxNum = Math.min(4, docs.size());  // 相关词个数
+            for (int i = 0, j = 0; j < maxNum && i < docs.size(); ) {
+                String relatedQuery = calRelatedSearch(docs.get(i).getCaption(), keyWord_1, keyWord_2);
+                if (!relatedSearch.contains(relatedQuery)) {
+                    relatedSearch.add(relatedQuery);
+                    j++;
+                }
+                i++;
             }
             return relatedSearch;
         }
