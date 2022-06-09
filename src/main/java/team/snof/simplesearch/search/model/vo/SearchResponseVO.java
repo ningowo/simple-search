@@ -22,4 +22,7 @@ public class SearchResponseVO {
     @ApiModelProperty(value = "相关搜索列表")
     private List<String> relatedSearchList;
 
+    @ApiModelProperty(value = "分页信息")
+    private SearchRequestVO query;
+
 }

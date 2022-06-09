@@ -42,7 +42,6 @@ public  class SortLogic {
                         .divide(new BigDecimal(k_3 + wordToFreqMap.get(word)), 3, RoundingMode.HALF_EVEN);
                 doc2Similarity.put(doc.getDocId(), doc2Similarity.getOrDefault(doc.getDocId(), new BigDecimal(0)).add(corr));
             }
-
         }
 
         //2.按相似度从高到低排序
@@ -52,12 +51,12 @@ public  class SortLogic {
             docs[idx++] = new Doc4Sort(entry.getKey(),entry.getValue());
         }
         List<Long> orderedDocs = new ArrayList<>();//DocId
-        Arrays.sort(docs,Collections.reverseOrder());
+        Arrays.sort(docs,Collections.reverseOrder());  // 内部改写了compareTo方法 未加@Override
 
         for(Doc4Sort doc:docs){
             orderedDocs.add(doc.getDocId());
         }
-        return orderedDocs;
+        return orderedDocs;  // list(DocId)  ordered
     }
 
     // 相关搜索分词排序
@@ -114,7 +113,6 @@ public  class SortLogic {
             long docNum = docLenStorage.getDocTotalNum();
             word2IDF = calIDF(docNum);
         }
-
         //4.根据TF-IDF计算关键字
         PriorityQueue<Word4Sort> topKeywords = new PriorityQueue<>();
         for(String word: word2Num.keySet()){

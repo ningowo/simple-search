@@ -38,7 +38,7 @@ public class IndexStorage {
             Query query = new Query(Criteria.where("indexKey").is(index.getIndexKey()));
             Index oldIndex = mongoTemplate.findOne(query, Index.class, "word_docid_corr");
             if (oldIndex == null) {
-                save(index);
+                mongoTemplate.save(index, "word_docid_corr");
             } else {
                 List<DocInfo> docInfoList = index.getDocInfoList();
                 oldIndex.getDocInfoList().addAll(docInfoList);
