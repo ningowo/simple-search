@@ -89,13 +89,7 @@ public class SearchService {
             // 从引擎层获取doc
             List<Doc> docList = engine.batchFindDocs(docIds);
 
-            // 准备DocVO
-            List<DocVO> docVOList = SearchAdaptor.convertDocListToDocVOList(docList);
-
-            return SearchResponseVO.builder()
-                    .docVOList(docVOList)
-                    .relatedSearchList(relatedSearches)
-                    .build();
+            return convertAndBuildResponse(docList, relatedSearches, request);
         }
 
         // 如缓存中没有该query
@@ -132,12 +126,19 @@ public class SearchService {
             docList = engine.batchFindDocs(docIds);
         }
 
+        return convertAndBuildResponse(docList, engineResult.getRelatedSearch(), request);
+    }
+
+    private SearchResponseVO convertAndBuildResponse(List<Doc> docList, List<String> relatedSearchList, SearchRequestVO request) {
         // 准备DocVO
         List<DocVO> docVOList = SearchAdaptor.convertDocListToDocVOList(docList);
 
+        request.setTotal((long) docList.size());
+
         return SearchResponseVO.builder()
                 .docVOList(docVOList)
-                .relatedSearchList(engineResult.getRelatedSearch())
+                .relatedSearchList(relatedSearchList)
+                .query(request)
                 .build();
     }
 
