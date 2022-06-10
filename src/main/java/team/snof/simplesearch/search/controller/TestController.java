@@ -81,15 +81,14 @@ public class TestController {
         return ResultVO.newSuccessResult(all);
     }
 
-    @RequestMapping("/findind")
+    @RequestMapping("/index/findind")
     public List<Index> findByKey(String key, boolean defaultkey) {
         String indexKey = key;
         if (defaultkey) {
-            indexKey = "测试1";
+            indexKey = "包邮";
         }
-        List<Index> inds = indexStorage.findByKey(indexKey);
 
-        return inds;
+        return indexStorage.findByKey(indexKey);
     }
 
     @RequestMapping(value = "/generate", method = RequestMethod.GET)
@@ -122,7 +121,6 @@ public class TestController {
         System.out.println("=============================");
 
         Map<String, Integer> wordToFreqMap1 = new HashMap<>();
-//        wordToFreqMap1.put(word, 1);
         wordToFreqMap1.put("冰箱", 1);
         wordToFreqMap1.put("好玩", 1);
         ComplexEngineResult result1 = engine.rangeFind(wordToFreqMap1, 0, 4);

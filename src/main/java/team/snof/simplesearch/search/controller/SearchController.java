@@ -37,10 +37,16 @@ public class SearchController {
         SearchResponseVO searchResult = null;
         try {
             searchResult = searchService.search(request);
+        } catch (IllegalArgumentException e) {
+            return ResultVO.newFailedResult(e.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
         }
-        log.info("查询完毕：" + request + "\n结果为：" + searchResult);
+
+        assert searchResult != null;
+        log.info("查询完毕：" + request +
+                "\n结果长度为：" + searchResult.getDocVOList().size() +
+                "\n相关搜索为: " + searchResult.getRelatedSearchList());
 
         return ResultVO.newSuccessResult(searchResult);
     }
@@ -48,7 +54,6 @@ public class SearchController {
     @RequestMapping(value = "/search/test", method = RequestMethod.GET)
     @ApiOperation("测试接口")
     public ResultVO<String> test() {
-//        String test = searchService.test();
         return ResultVO.newSuccessResult("测试接口ok: ");
     }
 

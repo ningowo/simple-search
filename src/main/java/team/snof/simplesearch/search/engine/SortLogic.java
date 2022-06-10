@@ -1,6 +1,6 @@
 package team.snof.simplesearch.search.engine;
 
-import io.swagger.models.auth.In;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
@@ -8,7 +8,6 @@ import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.Doc4Sort;
 import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
-import team.snof.simplesearch.search.model.dao.doc.Word4Sort;
 import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
@@ -17,6 +16,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 
+@Slf4j
 @Component
 public  class SortLogic {
 
@@ -28,7 +28,13 @@ public  class SortLogic {
     WordSegmentation wordSegmentation;
 
     private static HashMap<String,BigDecimal> word2IDF = new HashMap<>();
-    //private static final int relatedResultNum = 10; //相关检索数目
+
+    // 最多需要获取的相关搜索条数
+    private static final int MAX_NUM_RELATED_SEARCH_TO_FIND = 8;
+
+    // 最多进行相关搜索检索的文档
+    private static final int MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH = 6;
+
     private static final double k_3 = 1.5;  // k3  1.2~2
 
     //文档排序
@@ -60,57 +66,80 @@ public  class SortLogic {
     }
 
     /**
-     * 修改相关搜索实现方式
+     * 返回的list中不包含空值或重复词
      * @param docs
      * @param wordToFreqMap
      * @return
      */
     public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
+        log.info("开始构建相关搜索: " + "分词数量: " + wordToFreqMap.size() + ", 提供文档数量: " + docs.size());
+
+        Set<String> relatedSearch = new HashSet<>();
+        List<String> wordsToFindRelatedSearch = new ArrayList<>(wordToFreqMap.keySet());
+
         // 若分词个数为1 则取一个关键词（即该分词本身）
         long docTotalNum = docLenStorage.getDocTotalNum();
         if (wordToFreqMap.size() == 1) {
-            String keyWord = wordToFreqMap.keySet().iterator().next();
+            String keyWord = wordsToFindRelatedSearch.get(0);
 
-            // 取docs前4个文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
-            List<String> relatedSearch = new ArrayList<>();
-            int maxNum = Math.min(4, docs.size());
-            for (int i = 0, j = 0; j < maxNum;) {
-                String relatedQuery = calRelatedSearch(docs.get(i).getCaption(), keyWord);
-                if (!relatedSearch.contains(relatedQuery)) {
-                    relatedSearch.add(relatedQuery);
-                    j++;
+            // 取docs中文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
+            int maxNum = Math.min(MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH, docs.size());
+            List<Doc> docsToParse = docs.subList(0, maxNum);
+            for (Doc doc : docsToParse) {
+                // 对单个文档和要解析的单个分词进行解析
+                String relatedWord = calRelatedSearch(doc.getCaption(), keyWord);
+                if (!relatedWord.equals(keyWord)) {
+                    relatedSearch.add(relatedWord);
                 }
-                i++;
+                if (relatedSearch.size() > 8) {
+                    break;
+                }
             }
-            return relatedSearch;
         } else {
-            // 若分词个数大于2 则这里得到两个关键词
-            // 计算wordToFreqMap中所有word的IDF  最大的两个作为关键词
-            HashMap<String, BigDecimal> wordToIDFMap = new HashMap<>();
+            // 若分词个数大于1
+            String keyWord_1;
+            String keyWord_2;
 
-            for (String word : wordToFreqMap.keySet()) {
-                BigDecimal wordIDF = calWordIDF(word, docTotalNum);
-                wordToIDFMap.put(word, wordIDF);
-            }
+            // 1. 分词数量为2：不用重新选择关键词
+            if (wordsToFindRelatedSearch.size() == 2) {
+                keyWord_1 = wordsToFindRelatedSearch.get(0);
+                keyWord_2 = wordsToFindRelatedSearch.get(1);
+            } else {
+                // 2. 分词数量大于2：计算所有分词idf权重，选择最大的两个作为关键词
+                HashMap<String, BigDecimal> wordToIDFMap = new HashMap<>();
 
-            List<Map.Entry<String, BigDecimal>> wordToIDFList = new ArrayList<>(wordToIDFMap.entrySet());
-            Collections.sort(wordToIDFList, Comparator.comparing(Map.Entry::getValue));
-            String keyWord_1 = wordToIDFList.get(wordToIDFList.size() - 1).getKey();
-            String keyWord_2 = wordToIDFList.get(wordToIDFList.size() - 2).getKey();
-
-            // 取docs前4个文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
-            List<String> relatedSearch = new ArrayList<>();
-            int maxNum = Math.min(4, docs.size());  // 相关词个数
-            for (int i = 0, j = 0; j < maxNum && i < docs.size(); ) {
-                String relatedQuery = calRelatedSearch(docs.get(i).getCaption(), keyWord_1, keyWord_2);
-                if (!relatedSearch.contains(relatedQuery)) {
-                    relatedSearch.add(relatedQuery);
-                    j++;
+                // 计算idf权重
+                for (String word : wordsToFindRelatedSearch) {
+                    BigDecimal wordIDF = calWordIDF(word, docTotalNum);
+                    wordToIDFMap.put(word, wordIDF);
                 }
-                i++;
+
+                // 选择idf权重最大的两个分词
+                // todo 后面可以写个算法实现一下
+                List<Map.Entry<String, BigDecimal>> wordToIDFList = new ArrayList<>(wordToIDFMap.entrySet());
+                wordToIDFList.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+                keyWord_1 = wordToIDFList.get(0).getKey();
+                keyWord_2 = wordToIDFList.get(1).getKey();
             }
-            return relatedSearch;
+
+            // 取docs中文档进行解析，获取关键词和其后一个位置的词语，拼接称为相关搜索词语
+            int maxNum = Math.min(MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH, docs.size());
+            List<Doc> docsToParse = docs.subList(0, maxNum);
+            for (Doc doc : docsToParse) {
+                // 对单个文档和要解析的单个分词进行解析
+                String relatedWord = calRelatedSearch(doc.getCaption(), keyWord_1, keyWord_2);
+                if (!relatedWord.equals(keyWord_1) && !relatedWord.equals(keyWord_2)) {
+                    relatedSearch.add(relatedWord);
+                }
+                if (relatedSearch.size() > 8) {
+                    break;
+                }
+            }
         }
+
+        log.info("构建相关搜索完成! " + "相关搜索: " + relatedSearch);
+
+        return new ArrayList<>(relatedSearch);
     }
 
     // 计算单个分词的IDF  （未考虑单词与query关联度）

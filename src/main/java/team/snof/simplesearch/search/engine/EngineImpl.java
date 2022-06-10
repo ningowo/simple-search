@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.engine;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import team.snof.simplesearch.search.storage.OssStorage;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 public class EngineImpl implements Engine {
 
@@ -44,6 +46,11 @@ public class EngineImpl implements Engine {
         return new ComplexEngineResult(docs, docIds, relatedSearches);
     }
 
+    /**
+     * 实际使用
+     * @param wordToFreqMap
+     * @return
+     */
     public List<Long> findSortedDocIds(Map<String, Integer> wordToFreqMap) {
         // 获取索引
         List<String> words = new ArrayList<>(wordToFreqMap.keySet());
@@ -53,6 +60,12 @@ public class EngineImpl implements Engine {
         return sortLogic.docSort(indexs,wordToFreqMap);
     }
 
+    /**
+     * 实际使用
+     * @param docs
+     * @param wordToFreqMap
+     * @return
+     */
     public List<String> findRelatedSearch(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
         return sortLogic.wordSort(docs, wordToFreqMap);
     }
@@ -78,12 +91,19 @@ public class EngineImpl implements Engine {
         return OssStorage.getBySnowId(docId);
     }
 
-    //批查询文档
+    /**
+     * 实际使用
+     * 批查询文档
+     * @param docIds
+     * @return
+     */
     public List<Doc> batchFindDocs(List<Long> docIds){// 常用
+        log.info("开始批获取文档: " + docIds);
         List<Doc> docs = new ArrayList<>();
         for(Long docId: docIds){
             docs.add(OssStorage.getBySnowId(docId));
         }
+        log.info("文档获取完成! 文档id为:" + docIds);
         return docs;
     }
 
@@ -103,6 +123,7 @@ public class EngineImpl implements Engine {
     }
 
     /**
+     * 实际使用
      * 只返回非空索引
      * @param words
      * @return
@@ -111,6 +132,7 @@ public class EngineImpl implements Engine {
         if (words.isEmpty()) {
             return Collections.emptyList();
         }
+        log.info("开始批获取索引: " + words);
 
         //redis查询
         // 构建Redis查询keys
@@ -135,6 +157,9 @@ public class EngineImpl implements Engine {
             }
         }
         indexs.removeIf(Objects::isNull);
+
+        log.info("批获取索引完成! 分词: " + words + ", 索引数量: " + indexs.size());
+
         return indexs;
     }
 }
