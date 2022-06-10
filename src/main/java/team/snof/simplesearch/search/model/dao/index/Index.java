@@ -12,7 +12,7 @@ public class Index implements Serializable {
 
     public List<DocInfo> docInfoList;
 
-    public Index(String indexKey, List<DocInfo>docInfoList) {
+    public Index(String indexKey, List<DocInfo> docInfoList) {
         this.indexKey = indexKey;
         this.docInfoList = docInfoList;
     }

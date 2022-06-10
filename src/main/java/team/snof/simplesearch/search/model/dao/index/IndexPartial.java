@@ -1,8 +1,6 @@
 package team.snof.simplesearch.search.model.dao.index;
 
-import lombok.Builder;
 import lombok.Data;
-import team.snof.simplesearch.search.model.dao.index.TempData;
 
 import java.util.List;
 
