@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.engine;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 public class IndexBuilder {
 
@@ -27,8 +29,8 @@ public class IndexBuilder {
     IndexStorage indexStorage;
     @Autowired
     IndexPartialStorage indexPartialStorage;
-
-    private DocLenStorage docLenStorage;
+    @Autowired
+    DocLenStorage docLenStorage;
 
 //    ThreadPoolExecutor executor;
 
@@ -47,8 +49,7 @@ public class IndexBuilder {
 //
 //    }
 
-    @Autowired
-    public void setDocLenStorage(DocLenStorage docLenStorage){
+    public void setDocLenStorage(DocLenStorage docLenStorage) {
         this.docLenStorage = docLenStorage;
         docAveLen = docLenStorage.getDocAveLen();
         docTotalNum = docLenStorage.getDocTotalNum();
@@ -125,22 +126,31 @@ public class IndexBuilder {
                 .multiply(BigDecimal.valueOf(wordFreq)
                         .multiply(BigDecimal.valueOf(k_1 + 1))
                         .divide(BigDecimal.valueOf((k_1 * (1 - b)) + b * (double) (docLen / docAveLen) + wordFreq),
-                        3, RoundingMode.HALF_EVEN));
+                                3, RoundingMode.HALF_EVEN));
 
         return corr;
     }
+
     public HashMap<String, BigDecimal> calculateWeight(long docTotalNum, List<String> wordListTotal) {
         // 1. 统计包含某个分词的文档个数 word,wordDocNum
 
-    // 计算所有word的权重
+        // 计算所有word的权重
         HashMap<String, Long> wordDocNumMap = indexPartialStorage.getWordDocNum(wordListTotal);
 
         // 2. 计算权重
         HashMap<String, BigDecimal> wordWeightMap = new HashMap<>();
         for (String word : wordDocNumMap.keySet()) {
             long wordDocNum = wordDocNumMap.get(word);
-            double log = Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5));
-            BigDecimal wordWeight = new BigDecimal(log);
+            double mathLog = Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5));
+
+            BigDecimal wordWeight;
+            try {
+                wordWeight = new BigDecimal(mathLog);
+            } catch (NumberFormatException e) {
+                log.warn("分词权重异常：" + mathLog);
+                wordWeight = new BigDecimal(0);
+            }
+
             wordWeightMap.put(word, wordWeight);
         }
         return wordWeightMap;

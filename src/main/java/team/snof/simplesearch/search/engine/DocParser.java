@@ -59,24 +59,6 @@ public class DocParser {
             IndexPartial indexPartial = new IndexPartial(word, tempDataList);
             indexPartialStorage.saveIndexPartial(indexPartial);
         }
-//        for (Map.Entry<String, Integer> entry : wordToFreqMap.entrySet()) {
-//            // 此处生成tempDatalist 传入构造方法
-//            TempData tempData = new TempData(docId, entry.getValue());
-//
-//            String word = entry.getKey();
-//            IndexPartial wordIndexPartial = indexPartialStorage.getIndexPartial(word);
-//            // 如果不存在word记录  则插入word-list
-//            if (wordIndexPartial == null) {
-//                List<TempData> tempDataList = new ArrayList<>();
-//                tempDataList.add(tempData);
-//                IndexPartial indexPartial = new IndexPartial(word, tempDataList);
-//                indexPartialStorage.saveIndexPartial(indexPartial);
-//            }else{
-//                // 如果word_temp中已经有word记录 则扩充word对应list
-//                wordIndexPartial.tempDataList.add(tempData);
-//                indexPartialStorage.saveIndexPartial(wordIndexPartial);
-//            }
-//        }
 
         // 储存文档
         Doc doc = new Doc(docId, url, caption);

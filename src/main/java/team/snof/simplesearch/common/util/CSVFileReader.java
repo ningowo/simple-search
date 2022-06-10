@@ -1,16 +1,19 @@
 package team.snof.simplesearch.common.util;
 
-import com.opencsv.CSVParser;
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
+import com.opencsv.*;
+import com.opencsv.bean.CsvToBean;
+import com.opencsv.bean.CsvToBeanBuilder;
+import com.opencsv.bean.HeaderColumnNameMappingStrategy;
+import com.opencsv.enums.CSVReaderNullFieldIndicator;
 import com.opencsv.exceptions.CsvValidationException;
 import lombok.extern.slf4j.Slf4j;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,25 +52,30 @@ public class CSVFileReader {
      */
     public static List<Doc> readFile(String filePath) {
         List<Doc> docs = new ArrayList<>();
+        log.info("begin to read file: " + filePath);
         try {
             // 使用CSVParser流式读取
-            InputStreamReader reader = new InputStreamReader(new FileInputStream(filePath), "GBK");
-            CSVParser csvParser = new CSVParserBuilder().withSeparator(',').build();
-            CSVReader csvReader = new CSVReaderBuilder(reader).withCSVParser(csvParser).withSkipLines(HEADER_OFFSET).build();
-
+            InputStreamReader reader = new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8);
+            RFC4180Parser parser = new RFC4180ParserBuilder().build();
+            CSVReader csvReader = new CSVReaderBuilder(reader).withCSVParser(parser).withSkipLines(HEADER_OFFSET).build();
             // 读取文件
             String[] values;
             while ((values = csvReader.readNext()) != null) {
+                if(values.length < 2) {
+                    continue;
+                }
                 String url = values[0];
                 String caption = values[1];
                 docs.add(new Doc(0L, url, caption));
             }
-        } catch (IOException | CsvValidationException e) {
+        } catch (IOException | CsvValidationException | ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
+            log.error("read file error: " + filePath);
+        } finally {
+            log.info("rows: " + docs.size());
         }
         return docs;
     }
-
 
     public static Map<String, List<Doc>> parallelReadFiles(List<String> filePathList) throws InterruptedException {
         return parallelReadFiles("", filePathList);

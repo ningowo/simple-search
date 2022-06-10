@@ -4,6 +4,7 @@ import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 

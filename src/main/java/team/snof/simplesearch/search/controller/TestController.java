@@ -101,7 +101,7 @@ public class TestController {
         } else {
             path = filePath;
         }
-
+        System.out.println("开始解析文档");
         runner.generate(path);
 
         return ResultVO.newSuccessResult("Result: " + path);
@@ -112,36 +112,20 @@ public class TestController {
         System.out.println("+++++++++++");
 
         List<String> words = new ArrayList<>();
-        words.add("曾是");
-        words.add("妈妈");
+        words.add("冰箱");
 
         List<Long> docIds = new ArrayList<>();
         docIds.add(6932693475694469120L);
         docIds.add(6932695833488785408L);
         docIds.add(6932695902157930496L);
 
-//        List<Index> indices = engine.batchFindIndexes(words);
-//        for (Index index : indices) {
-//            System.out.println("IND+++++++++++" + index);
-//        }
-//        Index ind = engine.findIndex("曾是");
-//        System.out.println(ind);
-
-//        System.out.println("==================================================");
-//
-//        Map<String, Integer> wordToFreqMap = new HashMap<>();
-//        wordToFreqMap.put("曾是", 2);
-//        wordToFreqMap.put("妈妈", 1);
-//        ComplexEngineResult result = engine.find(wordToFreqMap);
-//        System.out.println(result.getDocs());
-//        System.out.println(result.getTotalDocIds());
-//        System.out.println(result.getRelatedSearch());
-
         System.out.println("=============================");
 
         Map<String, Integer> wordToFreqMap1 = new HashMap<>();
-        wordToFreqMap1.put(word, 2);
-        ComplexEngineResult result1 = engine.rangeFind(wordToFreqMap1, 0, 2);
+//        wordToFreqMap1.put(word, 1);
+        wordToFreqMap1.put("冰箱", 1);
+        wordToFreqMap1.put("好玩", 1);
+        ComplexEngineResult result1 = engine.rangeFind(wordToFreqMap1, 0, 4);
         System.out.println(result1.getDocs());
         System.out.println(result1.getTotalDocIds());
         System.out.println(result1.getRelatedSearch());

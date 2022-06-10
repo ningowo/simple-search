@@ -1,12 +1,13 @@
 package team.snof.simplesearch.search.engine;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import team.snof.simplesearch.search.storage.OssStorage;
-import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
-import team.snof.simplesearch.search.model.dao.index.Index;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
+import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.storage.IndexStorage;
+import team.snof.simplesearch.search.storage.OssStorage;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +58,7 @@ public class EngineImpl implements Engine {
     }
 
     //返回指定文档结果
-    public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit){
+    public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit) {
         // 获取分词
         List<String> words = new ArrayList<>(wordToFreqMap.keySet());
 
