@@ -29,7 +29,7 @@ public class IndexBuilder {
     IndexStorage indexStorage;
     @Autowired
     IndexPartialStorage indexPartialStorage;
-    @Autowired
+
     DocLenStorage docLenStorage;
 
 //    ThreadPoolExecutor executor;
@@ -49,6 +49,7 @@ public class IndexBuilder {
 //
 //    }
 
+    @Autowired
     public void setDocLenStorage(DocLenStorage docLenStorage) {
         this.docLenStorage = docLenStorage;
         docAveLen = docLenStorage.getDocAveLen();
@@ -147,7 +148,7 @@ public class IndexBuilder {
             try {
                 wordWeight = new BigDecimal(mathLog);
             } catch (NumberFormatException e) {
-                log.warn("分词权重异常：" + mathLog);
+                log.warn("分词权重异常：" + word + " 权重为 "+ mathLog);
                 wordWeight = new BigDecimal(0);
             }
 
