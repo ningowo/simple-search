@@ -1,14 +1,14 @@
 package team.snof.simplesearch.search.engine;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import team.snof.simplesearch.search.storage.OssStorage;
-import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
-import team.snof.simplesearch.search.model.dao.index.Index;
-import org.springframework.data.redis.core.RedisTemplate;
-import team.snof.simplesearch.search.storage.IndexStorage;
 
-import java.io.IOException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
+import team.snof.simplesearch.search.model.dao.index.Index;
+import team.snof.simplesearch.search.storage.IndexStorage;
+import team.snof.simplesearch.search.storage.OssStorage;
+
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -27,16 +27,34 @@ public class EngineImpl implements Engine {
     private final String indexRedisFormat = "engine:index:%s:string";//索引redis格式串
     private final int expireDuration = 10;//倒排索引缓存时间(min)
     //返回全部文档结果
-    public ComplexEngineResult find(Map<String, Integer> wordToFreqMap) {
-         // 获取分词
-         List<String> words = new ArrayList<>();
-         for(String word : wordToFreqMap.keySet()) words.add(word);
+    public ComplexEngineResult find(Map<String, Integer> wordToFreqMap){
+        // 获取索引
+        List<String> words = new ArrayList<>(wordToFreqMap.keySet());
+        List<Index> indexs = batchFindIndexes(words);
 
-         List<Index> indexs = batchFindIndexes(words);
-         List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
-         List<Doc> docs = batchFindDocs(docIds);
-         return new ComplexEngineResult(docs,docIds,sortLogic.wordSort(docs, wordToFreqMap));
-//        return new ComplexEngineResult();
+        // 文档排序
+        List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
+
+        // 获取文档
+        List<Doc> docs = batchFindDocs(docIds);
+
+        // 计算相关搜索结果
+        List<String> relatedSearches = sortLogic.wordSort(docs, wordToFreqMap);
+
+        return new ComplexEngineResult(docs, docIds, relatedSearches);
+    }
+
+    public List<Long> findSortedDocIds(Map<String, Integer> wordToFreqMap) {
+        // 获取索引
+        List<String> words = new ArrayList<>(wordToFreqMap.keySet());
+        List<Index> indexs = batchFindIndexes(words);
+
+        // 文档排序
+        return sortLogic.docSort(indexs,wordToFreqMap);
+    }
+
+    public List<String> findRelatedSearch(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
+        return sortLogic.wordSort(docs, wordToFreqMap);
     }
 
     //返回指定文档结果

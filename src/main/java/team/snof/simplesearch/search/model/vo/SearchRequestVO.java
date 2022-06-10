@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Getter
@@ -17,6 +18,7 @@ import java.util.List;
 public class SearchRequestVO extends PageQueryVO {
 
     @ApiModelProperty
+    @NotNull(message = "查询参数不能为空")
     String query;
 
     @ApiModelProperty

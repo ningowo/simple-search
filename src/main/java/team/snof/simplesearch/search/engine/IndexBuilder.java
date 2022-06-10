@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.engine;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 public class IndexBuilder {
 
@@ -27,7 +29,7 @@ public class IndexBuilder {
     IndexStorage indexStorage;
     @Autowired
     IndexPartialStorage indexPartialStorage;
-    @Autowired
+
     DocLenStorage docLenStorage;
 
 //    ThreadPoolExecutor executor;
@@ -47,6 +49,7 @@ public class IndexBuilder {
 //
 //    }
 
+    @Autowired
     public void setDocLenStorage(DocLenStorage docLenStorage) {
         this.docLenStorage = docLenStorage;
         docAveLen = docLenStorage.getDocAveLen();
@@ -139,9 +142,16 @@ public class IndexBuilder {
         HashMap<String, BigDecimal> wordWeightMap = new HashMap<>();
         for (String word : wordDocNumMap.keySet()) {
             long wordDocNum = wordDocNumMap.get(word);
-            double log = Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5));
-//            System.out.println("=============" + log);
-            BigDecimal wordWeight = BigDecimal.valueOf(log);
+            double mathLog = Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5));
+
+            BigDecimal wordWeight;
+            try {
+                wordWeight = new BigDecimal(mathLog);
+            } catch (NumberFormatException e) {
+                log.warn("分词权重异常：" + word + " 权重为 "+ mathLog);
+                wordWeight = new BigDecimal(0);
+            }
+
             wordWeightMap.put(word, wordWeight);
         }
         return wordWeightMap;
