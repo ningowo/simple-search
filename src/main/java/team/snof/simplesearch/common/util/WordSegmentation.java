@@ -37,4 +37,17 @@ public class WordSegmentation {
         }
         return map;
     }
+
+    // 添加经返回wordList的方法（按照文档分词原始顺序）
+    public List<String> segmentToWordList(String msg) throws IOException {
+        StringReader sr = new StringReader(msg);
+        IKSegmenter ik = new IKSegmenter(sr, true);
+        Lexeme lex = null;
+        List<String> wordList = new ArrayList<>();
+        while ((lex = ik.next()) != null) {
+            String segmentedWord = lex.getLexemeText();
+            wordList.add(segmentedWord);
+        }
+        return wordList;
+    }
 }
