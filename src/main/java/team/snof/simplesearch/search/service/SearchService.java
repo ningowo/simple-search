@@ -1,15 +1,14 @@
 package team.snof.simplesearch.search.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.RedisUtils;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.adaptor.SearchAdaptor;
 import team.snof.simplesearch.search.engine.Engine;
-import team.snof.simplesearch.search.model.bo.DocsAndRelatedSearch;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocInfo;
-import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.vo.DocVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
@@ -39,6 +38,9 @@ public class SearchService {
     @Autowired
     RedisUtils redisUtils;
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
     public SearchResponseVO search(SearchRequestVO request) throws IOException {
         // 获取请求参数
         String query = request.getQuery();
@@ -63,9 +65,6 @@ public class SearchService {
             }
         }
 
-        // 获取过滤词信息
-        Set<Long> filterDocIds = findDocIdsByWord(filterWordList);
-
         // TODO 如果能找个办法把query和过滤词合并成一个搜索条件，那么以此建立缓存key，就能比较简单的缓存结果。现在因为相关搜索需要获取doc,
         //  过滤之后还要获取doc，这两个重复度有点高
         //  （这里缓存是为了分页使用的，因为有相同条件重复查询）
@@ -79,21 +78,22 @@ public class SearchService {
 
         // 1. 尝试获取相关搜索
         String queryToRelatedSearchKey = "search:related:" + query + ":list";
-        List<Object> relatedSearchObjects = redisUtils.lGetAll(queryToRelatedSearchKey);
+        List<String> relatedSearch = redisUtils.lGetAll(queryToRelatedSearchKey);
 
         // 2. 如果redis里不存在或者过期了，查询全部doc计算相关搜索，并更新缓存
-        if (relatedSearchObjects == null) {
+        if (relatedSearch.isEmpty()) {
             // 查询doc
-            List<Long> lessDocIdsForRelatedSearch = sortedAllDocIds.subList(0, MAX_DOC_NUM_FOR_RELATED_SEARCH);
+            int end = Math.min(MAX_DOC_NUM_FOR_RELATED_SEARCH, sortedAllDocIds.size());
+            List<Long> lessDocIdsForRelatedSearch = sortedAllDocIds.subList(0, end);
             List<Doc> lessDocs = engine.batchFindDocs(lessDocIdsForRelatedSearch);
 
             // 更新缓存（只根据query生成的相关搜索）
-            relatedSearchObjects = Collections.singletonList(engine.findRelatedSearch(lessDocs, wordToFreqMap));
-            redisUtils.lSet(queryToRelatedSearchKey, relatedSearchObjects, DEFAULT_CACHE_EXPIRE_TIME);
+            relatedSearch = engine.findRelatedSearch(lessDocs, wordToFreqMap);
+            redisUtils.lSetAll(queryToRelatedSearchKey, relatedSearch, DEFAULT_CACHE_EXPIRE_TIME);
         }
-        List<String> relatedSearch = convertObjectListToStringList(relatedSearchObjects);
 
         // 过滤
+        Set<Long> filterDocIds = findDocIdsByWord(filterWordList);
         List<Long> filteredAndSortedDocIds = filterDocIdsByIds(sortedAllDocIds, filterDocIds);
         int totalDocNum = filteredAndSortedDocIds.size();
         if (totalDocNum == 0) {
@@ -119,36 +119,27 @@ public class SearchService {
 
     private List<Long> searchEngineOrCacheForDocIds(String queryToDocIdsCacheKey, HashMap<String, Integer> wordToFreqMap) {
         // 这里先全部查出来，在业务侧做筛选。不然担心有一开始hasKey是true，get时缓存过期的情况。之后再优化。
-        List<Object> sortedDocIdObjects = redisUtils.lGetAll(queryToDocIdsCacheKey);
+        List<Long> sortedDocIds = redisUtils.lGetAll(queryToDocIdsCacheKey);
 
         // 如果缓存里有
-        if (sortedDocIdObjects != null) {
-            return convertObjectListToLongList(sortedDocIdObjects);
+        if (!sortedDocIds.isEmpty()) {
+            return sortedDocIds;
         } else {
             // 如果redis里不存在或者过期了，查询并更新缓存
             // 查询
-            List<Long> sortedDocIds = engine.findSortedDocIds(wordToFreqMap);
+            sortedDocIds = engine.findSortedDocIds(wordToFreqMap);
+
+            // 如果引擎也查不到，返回空list
+            if (sortedDocIds.isEmpty()) {
+                return Collections.emptyList();
+            }
 
             // 更新
-            sortedDocIdObjects = Collections.singletonList(sortedDocIds);
-            // 这里注意工具类的使用，如果放进去的是List<Long>，那就把这一个list当成一个value放进去了，是push而不是pushAll
-            // 同时注意，这里往缓存里放的搜索排好序的文档，和引擎层的缓存作用不同
-            redisUtils.lSet(queryToDocIdsCacheKey, sortedDocIdObjects, DEFAULT_CACHE_EXPIRE_TIME);
+            // 这里往缓存里放的搜索排好序的文档，和引擎层的缓存作用不同
+            redisUtils.lSetAll(queryToDocIdsCacheKey, sortedDocIds, DEFAULT_CACHE_EXPIRE_TIME);
 
             return sortedDocIds;
         }
-    }
-
-    private List<Long> convertObjectListToLongList(List<Object> objects) {
-        return objects.stream()
-                .map(obj -> (Long) obj)
-                .collect(Collectors.toList());
-    }
-
-    private List<String> convertObjectListToStringList(List<Object> objects) {
-        return objects.stream()
-                .map(obj -> (String) obj)
-                .collect(Collectors.toList());
     }
 
     private SearchResponseVO convertAndBuildResponse(List<Doc> docList, List<String> relatedSearchList, SearchRequestVO request) {

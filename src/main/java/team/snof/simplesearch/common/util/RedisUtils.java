@@ -5,10 +5,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -403,12 +400,12 @@ public class RedisUtils {
      * @param end   结束  0 到 -1代表所有值
      * @return
      */
-    public List<Object> lGet(String key, long start, long end) {
+    public List lGet(String key, long start, long end) {
         try {
             return redisTemplate.opsForList().range(key, start, end);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -417,12 +414,12 @@ public class RedisUtils {
      * @param key   键
      * @return
      */
-    public List<Object> lGetAll(String key) {
+    public List lGetAll(String key) {
         try {
             return redisTemplate.opsForList().range(key, 0, -1);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -495,7 +492,7 @@ public class RedisUtils {
      * @param value 值
      * @return
      */
-    public boolean lSet(String key, List<Object> value) {
+    public boolean lSetAll(String key, List value) {
         try {
             redisTemplate.opsForList().rightPushAll(key, value);
             return true;
@@ -512,7 +509,7 @@ public class RedisUtils {
      * @param time  时间(秒)
      * @return
      */
-    public boolean lSet(String key, List<Object> value, long time) {
+    public boolean lSetAll(String key, List value, long time) {
         try {
             redisTemplate.opsForList().rightPushAll(key, value);
             if (time > 0) expire(key, time);

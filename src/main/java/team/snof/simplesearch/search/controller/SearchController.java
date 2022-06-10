@@ -2,6 +2,7 @@ package team.snof.simplesearch.search.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +17,7 @@ import team.snof.simplesearch.search.service.SearchService;
 import javax.validation.Valid;
 import java.io.IOException;
 
+@Slf4j
 @Api("搜索接口")
 @RestController()
 public class SearchController {
@@ -30,12 +32,15 @@ public class SearchController {
             return ResultVO.newParamErrorResult("查询文字不能为空！");
         }
 
+        log.info("开始查询：" + request);
+
         SearchResponseVO searchResult = null;
         try {
             searchResult = searchService.search(request);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        log.info("查询完毕：" + request + "\n结果为：" + searchResult);
 
         return ResultVO.newSuccessResult(searchResult);
     }
