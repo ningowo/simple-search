@@ -41,7 +41,7 @@ public class DocParser {
     // 解析doc，并获得索引所需参数
     public void parse(List<Doc> docList) {
         CollectionSpliter<Doc> spliter = new CollectionSpliter<>();
-        List<List<Doc>> docLists = spliter.splitList(docList, 2000);
+        List<List<Doc>> docLists = spliter.splitList(docList, 4000);
 
         CountDownLatch countDownLatch = new CountDownLatch(docLists.size());
         for (List<Doc> docs : docLists) {
