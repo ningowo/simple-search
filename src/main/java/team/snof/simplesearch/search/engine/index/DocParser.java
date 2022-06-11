@@ -41,69 +41,25 @@ public class DocParser {
     // 解析doc，并获得索引所需参数
     public void parse(List<Doc> docList) {
         CollectionSpliter<Doc> spliter = new CollectionSpliter<>();
-        List<List<Doc>> docLists = spliter.splitList(docList, 1000);
+        List<List<Doc>> docLists = spliter.splitList(docList, 2000);
 
         CountDownLatch countDownLatch = new CountDownLatch(docLists.size());
         for (List<Doc> docs : docLists) {
-//            docParserExecutor.execute(() -> {
-                List<Doc> docsToParse = new ArrayList<>(docs.size());
+            docParserExecutor.execute(() -> {
                 for (Doc doc : docs) {
+
                     // 1. 生成雪花id (这里暂时用雪花id，来不及改了，应该用mongodb自己生成的_id的）
                     String docId = String.valueOf(SnowFlakeIDGenerator.generateSnowFlakeId());
                     doc.setId(docId);
-
-                    // todo 用完删
-                    docsToParse.add(doc);
-
                     docStorage.addDoc(doc);
-                }
 
-                HashMap<String, Map<String, Integer>> map = new HashMap<>(docs.size());
-                for (Doc doc : docsToParse) {
-                    Map<String, Integer> wordToFreqMap = null;
-                    String caption = doc.getCaption();
-                    String docId = doc.getId();
-
-                    try {
-                        wordToFreqMap = wordSegmentation.segment(caption);
-                        map.put(docId, wordToFreqMap);
-                    } catch (IOException e) {
-                        log.error("分词失败：" + caption);
-                    }
-                }
-
-                log.info("开始存储doclen");
-                for (String s : map.keySet()) {
-                    Map<String, Integer> wordToFreqMap = map.get(s);
-                    String docId = s;
-
-                    // 文档长度
-                    if (wordToFreqMap == null) {
-                        return;
-                    }
-                    long docLength = wordToFreqMap.size();
-                    // 储存文档长度到doc_length表  {doc_id, doc_len}
-                    DocLen docLen = new DocLen(docId, docLength);
-                    docLenStorage.save(docLen);
-                }
-
-                log.info("开始解析文档并存中间表");
-                for (String s : map.keySet()) {
-                    Map<String, Integer> wordToFreqMap = map.get(s);
-                    String docId = s;
-                    // 储存分词对应的文档和词频  <word, word_freq>
-                    for (Map.Entry<String, Integer> entry : wordToFreqMap.entrySet()) {
-                        TempData tempData = new TempData(docId, entry.getValue());
-                        String word = entry.getKey();
-
-                        IndexPartial indexPartial = new IndexPartial(word, tempData);
-                        indexPartialStorage.saveIndexPartial(indexPartial);
-                    }
+                    // 2. 解析获取分词在文档中词频
+                    parseDoc(doc.getCaption(), docId);
                 }
 
                 log.info("一组读取完毕，数量：" + docs.size());
                 countDownLatch.countDown();
-//            });
+            });
         }
 
         try {
@@ -133,10 +89,11 @@ public class DocParser {
 
         // 储存分词对应的文档和词频  <word, word_freq>
         for (Map.Entry<String, Integer> entry : wordToFreqMap.entrySet()) {
+            TempData tempData = new TempData(docId, entry.getValue());
             String word = entry.getKey();
-            Integer freq = entry.getValue();
 
-//            indexPartialStorage.saveIndexPartial(word, freq);
+            IndexPartial indexPartial = new IndexPartial(word, tempData);
+            indexPartialStorage.saveIndexPartial(indexPartial);
         }
 
     }
