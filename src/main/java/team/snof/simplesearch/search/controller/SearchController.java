@@ -13,6 +13,7 @@ import team.snof.simplesearch.search.model.vo.ResultVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 import team.snof.simplesearch.search.model.vo.SearchResponseVO;
 import team.snof.simplesearch.search.service.SearchService;
+import team.snof.simplesearch.search.storage.OssStorage;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -41,6 +42,9 @@ public class SearchController {
             return ResultVO.newFailedResult(e.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
+        }finally {
+            //关闭Oss连接
+            OssStorage.stopOss();
         }
 
         assert searchResult != null;

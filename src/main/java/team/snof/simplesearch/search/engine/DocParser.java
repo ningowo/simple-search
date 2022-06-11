@@ -34,6 +34,7 @@ public class DocParser {
             long docId = SnowFlakeIDGenerator.generateSnowFlakeId();  // 调用雪花id生成doc_id 后面文档存储也要用这个id
             parseDoc(doc.getUrl(), doc.getCaption(), docId);
         }
+        OssStorage.stopOss();//关闭Oss连接
     }
 
     // 解析每个doc中间参数存入word_temp表中
