@@ -76,6 +76,7 @@ public class SearchService {
             return getEmptyResponseVO(request);
         }
 
+        Map<Long, Doc> docMap = new HashMap<>();
         // 1. 尝试获取相关搜索
         String queryToRelatedSearchKey = "search:related:" + query + ":list";
         List<String> relatedSearch = redisUtils.lGetAll(queryToRelatedSearchKey);
@@ -86,6 +87,7 @@ public class SearchService {
             int end = Math.min(MAX_DOC_NUM_FOR_RELATED_SEARCH, sortedAllDocIds.size());
             List<Long> lessDocIdsForRelatedSearch = sortedAllDocIds.subList(0, end);
             List<Doc> lessDocs = engine.batchFindDocs(lessDocIdsForRelatedSearch);
+            lessDocs.forEach(doc -> docMap.put(doc.getSnowflakeDocId(), doc));
 
             // 更新缓存（只根据query生成的相关搜索）
             relatedSearch = engine.findRelatedSearch(lessDocs, wordToFreqMap);
@@ -112,7 +114,14 @@ public class SearchService {
         List<Long> pageDocIds = filteredAndSortedDocIds.subList(start, end);
 
         // 查询文档
-        List<Doc> resDocs = engine.batchFindDocs(pageDocIds);
+        List<Doc> resDocs = new ArrayList<>();
+        for (Long docId : pageDocIds) {
+            if (docMap.containsKey(docId)) {
+                resDocs.add(docMap.get(docId));
+            } else {
+                resDocs.add(engine.findDoc(docId));
+            }
+        }
 
         return convertAndBuildResponse(resDocs, relatedSearch, request);
     }
