@@ -15,7 +15,6 @@ public interface Engine {
 
     ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit);
 
-
     // 细粒度查询
     List<Long> findSortedDocIds(Map<String, Integer> wordToFreqMap);
 
