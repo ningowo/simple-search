@@ -1,18 +1,30 @@
 package team.snof.simplesearch.search.model.dao.index;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ *  中间表word_temp的dao
+ */
+
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class IndexPartial {
-    // 中间表word_temp的数据结构
-    public String indexKey;
 
-    public List<TempData> tempDataList;
+    private String indexKey;
 
-    public IndexPartial(String indexKey, List<TempData> tempDataList) {
-        this.indexKey = indexKey;
+    private List<TempData> tempDataList;
+
+    public IndexPartial(String indexKey, TempData tempData) {
+        List<TempData> tempDataList = new ArrayList<>();
+        tempDataList.add(tempData);
+
         this.tempDataList = tempDataList;
+        this.indexKey = indexKey;
     }
 }

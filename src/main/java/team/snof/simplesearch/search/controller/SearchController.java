@@ -4,8 +4,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,7 +11,6 @@ import team.snof.simplesearch.search.model.vo.ResultVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 import team.snof.simplesearch.search.model.vo.SearchResponseVO;
 import team.snof.simplesearch.search.service.SearchService;
-import team.snof.simplesearch.search.storage.OssStorage;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -42,9 +39,6 @@ public class SearchController {
             return ResultVO.newFailedResult(e.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
-        }finally {
-            //关闭Oss连接
-            OssStorage.stopOss();
         }
 
         assert searchResult != null;

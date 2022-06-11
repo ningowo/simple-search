@@ -6,8 +6,6 @@ import lombok.Data;
 
 import java.io.Serializable;
 
-import java.io.Serializable;
-
 @Data
 @AllArgsConstructor
 public class Doc implements Serializable {

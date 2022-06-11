@@ -26,6 +26,9 @@ public class EngineImpl implements Engine {
     @Autowired
     SortLogic sortLogic;
 
+    @Autowired
+    OssStorage ossStorage;
+
     private final String indexRedisFormat = "engine:index:%s:string";//索引redis格式串
     private final int expireDuration = 10;//倒排索引缓存时间(min)
     //返回全部文档结果
@@ -88,7 +91,7 @@ public class EngineImpl implements Engine {
 
     // 文档查询
     public Doc findDoc(Long docId){
-        return OssStorage.getBySnowId(docId);
+        return ossStorage.getBySnowId(docId);
     }
 
     /**
@@ -98,12 +101,12 @@ public class EngineImpl implements Engine {
      * @return
      */
     public List<Doc> batchFindDocs(List<Long> docIds){// 常用
-        log.info("开始批获取文档: " + docIds);
+        log.info("开始批获取文档，请求文档数量为: " + docIds.size());
         List<Doc> docs = new ArrayList<>();
         for(Long docId: docIds){
-            docs.add(OssStorage.getBySnowId(docId));
+            docs.add(ossStorage.getBySnowId(docId));
         }
-        log.info("文档获取完成! 文档id为:" + docIds);
+        log.info("文档获取完成! 文档数量为:" + docs.size());
         return docs;
     }
 
@@ -128,7 +131,7 @@ public class EngineImpl implements Engine {
      * @param words
      * @return
      */
-    public List<Index> batchFindIndexes(List<String> words){
+    public List<Index> batchFindIndexes(List<String> words) {
         if (words.isEmpty()) {
             return Collections.emptyList();
         }

@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.engine;
+package team.snof.simplesearch.search.engine.index;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

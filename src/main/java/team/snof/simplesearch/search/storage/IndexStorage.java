@@ -28,7 +28,9 @@ public class IndexStorage {
         Query query = new Query(Criteria.where("indexKey").is(key));
         return mongoTemplate.find(query, Index.class, "word_docid_corr");
     }
-
+    /**
+     * save方法：如果数据库中存在则更新，而不是报错
+     */
     public void save(Index index) {
         mongoTemplate.save(index, "word_docid_corr");
     }
