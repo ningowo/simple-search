@@ -35,6 +35,11 @@ public class ResultVO<T> {
         this.data = data;
     }
 
+    public ResultVO(int code, String msg) {
+        this.code = code;
+        this.msg = msg;
+    }
+
     public static <T> ResultVO<T> newSuccessResult() {
         return new ResultVO<>(SUCCESS);
     }

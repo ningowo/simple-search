@@ -28,23 +28,15 @@ public class IndexStorage {
         Query query = new Query(Criteria.where("indexKey").is(key));
         return mongoTemplate.find(query, Index.class, "word_docid_corr");
     }
-
+    /**
+     * save方法：如果数据库中存在则更新，而不是报错
+     */
     public void save(Index index) {
         mongoTemplate.save(index, "word_docid_corr");
     }
 
     public void saveBatch(List<Index> indices) {
-        for (Index index : indices) {
-            Query query = new Query(Criteria.where("indexKey").is(index.getIndexKey()));
-            Index oldIndex = mongoTemplate.findOne(query, Index.class, "word_docid_corr");
-            if (oldIndex == null) {
-                mongoTemplate.save(index, "word_docid_corr");
-            } else {
-                List<DocInfo> docInfoList = index.getDocInfoList();
-                oldIndex.getDocInfoList().addAll(docInfoList);
-                updateByKey(oldIndex.getIndexKey(), oldIndex);
-            }
-        }
+        mongoTemplate.save(indices, "word_docid_corr");
     }
 
     public Long deleteByKey(String key) {

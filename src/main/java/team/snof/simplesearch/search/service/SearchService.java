@@ -146,8 +146,6 @@ public class SearchService {
         // 准备DocVO
         List<DocVO> docVOList = SearchAdaptor.convertDocListToDocVOList(docList);
 
-        request.setTotal((long) docList.size());
-
         return SearchResponseVO.builder()
                 .docVOList(docVOList)
                 .relatedSearchList(relatedSearchList)

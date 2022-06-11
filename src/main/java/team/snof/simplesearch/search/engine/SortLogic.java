@@ -191,20 +191,20 @@ public  class SortLogic {
     }
 
     // 计算单词的IDF
-    private HashMap<String, BigDecimal> calIDF(long doc_num) {
-        // 1. 统计包含某个分词的文档个数  <word,wordDocNum>
-        List<String> wordListTotal = indexPartialStorage.getAllIndexPartialWord();
-        HashMap<String, Long> word2FreqMap = indexPartialStorage.getWordDocNum(wordListTotal);
-
-        // 2. 计算IDF  <word,IDF>
-        HashMap<String, BigDecimal> word2IDF = new HashMap<>();
-        for (String word : word2FreqMap.keySet()) {
-            long wordDocNum = word2FreqMap.get(word);
-            BigDecimal weight = BigDecimal.valueOf(Math.log((doc_num - wordDocNum + 0.5) / (wordDocNum + 0.5)));
-            word2IDF.put(word, weight);
-        }
-        return word2IDF;
-    }
+//    private HashMap<String, BigDecimal> calIDF(long doc_num) {
+//        // 1. 统计包含某个分词的文档个数  <word,wordDocNum>
+////        List<String> wordListTotal = indexPartialStorage.getAllIndexPartialWord();
+////        HashMap<String, Long> word2FreqMap = indexPartialStorage.getWordDocNum(wordListTotal);
+//
+//        // 2. 计算IDF  <word,IDF>
+//        HashMap<String, BigDecimal> word2IDF = new HashMap<>();
+//        for (String word : word2FreqMap.keySet()) {
+//            long wordDocNum = word2FreqMap.get(word);
+//            BigDecimal weight = BigDecimal.valueOf(Math.log((doc_num - wordDocNum + 0.5) / (wordDocNum + 0.5)));
+//            word2IDF.put(word, weight);
+//        }
+//        return word2IDF;
+//    }
 
     // 计算某一文档的词频
     private HashMap<String,BigDecimal> calTF(List<String> wordList){
