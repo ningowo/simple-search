@@ -24,10 +24,10 @@ import java.util.Map;
  * 1. 开启redis和mongodb
  * 2. 启动项目
  * 3. 下载数据集并放到指定位置
- *      3.1 放到"D:\\ByteDanceCamp\\test20.csv"，然后直接访问http://localhost:8080/search/test/generate?filePath=&defaultPath=true
- *      3.2 或者，放到随便什么位置，然后访问http://localhost:8080/search/test/generate?filePath=${随便什么位置}&defaultPath=false
+ *      3.1 放到"D:\\ByteDanceCamp\\test20.csv"，然后直接访问http://localhost:5900/search/test/index/generate?filePath=&defaultPath=true
+ *      3.2 或者，放到随便什么位置，然后访问http://localhost:8080/search/test/index/generate?filePath=${随便什么位置}&defaultPath=false
  *      然后能看到console打印的"解析文件和存储文件、构建索引并存储"，即为成功
- * 4. 访问http://localhost:8080/search/test/eng，即可简单测试engine.find和engine.rangeFind这两个接口
+ * 4. 访问http://localhost:5900/search/test/eng，即可简单测试engine.find和engine.rangeFind这两个接口
  * 5. （可选）自定义测试方法，修改engineTest方法的参数和内容，自己在controller里传参进行测试
  */
 @Api("测试接口")

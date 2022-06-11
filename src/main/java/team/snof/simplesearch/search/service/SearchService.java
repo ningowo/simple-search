@@ -8,7 +8,7 @@ import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.adaptor.SearchAdaptor;
 import team.snof.simplesearch.search.engine.Engine;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
-import team.snof.simplesearch.search.model.dao.doc.DocInfo;
+import team.snof.simplesearch.search.model.dao.index.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.vo.DocVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
@@ -127,7 +127,8 @@ public class SearchService {
     }
 
     private List<String> searchEngineOrCacheForDocIds(String queryToDocIdsCacheKey, HashMap<String, Integer> wordToFreqMap) {
-        // 这里先全部查出来，在业务侧做筛选。不然担心有一开始hasKey是true，get时缓存过期的情况。之后再优化。
+        // 这里先全部查出来，在业务侧做筛选。不然担心有一开始hasKey是true，get时缓存过期的情况。
+        // 之后再优化。
         List<String> sortedDocIds = redisUtils.lGetAll(queryToDocIdsCacheKey);
 
         // 如果缓存里有
@@ -188,16 +189,6 @@ public class SearchService {
 
         return docIds.stream()
                 .filter(id -> !idsToFilter.contains(id))
-                .collect(Collectors.toList());
-    }
-
-    private List<Doc> filterDocsByIds(List<Doc> docs, Set<String> idsToFilter) {
-        if (idsToFilter.isEmpty()) {
-            return docs;
-        }
-
-        return docs.stream()
-                .filter(doc -> !idsToFilter.contains(doc.getId()))
                 .collect(Collectors.toList());
     }
 

@@ -10,9 +10,11 @@ import org.springframework.data.annotation.Id;
 @NoArgsConstructor
 public class TempData {
 
+    // 作为MongoDB的_id存储
     @Id
     private String docId;
 
+    // 分词在文档中词频
     private Integer wordFreq;
 
 }

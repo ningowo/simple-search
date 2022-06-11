@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.search.model.dao.doc.DocInfo;
+import team.snof.simplesearch.search.model.dao.index.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
 
 import java.util.List;
@@ -28,6 +28,7 @@ public class IndexStorage {
         Query query = new Query(Criteria.where("indexKey").is(key));
         return mongoTemplate.find(query, Index.class, "word_docid_corr");
     }
+
     /**
      * save方法：如果数据库中存在则更新，而不是报错
      */
@@ -35,6 +36,10 @@ public class IndexStorage {
         mongoTemplate.save(index, "word_docid_corr");
     }
 
+    /**
+     * 如分词索引已经存在，则在其temp_data列表中继续插入
+     * @param indices
+     */
     public void saveBatch(List<Index> indices) {
         for (Index index : indices) {
             Query query = new Query(Criteria.where("indexKey").is(index.getIndexKey()));

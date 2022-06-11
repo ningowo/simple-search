@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.bo.Doc4Sort;
-import team.snof.simplesearch.search.model.dao.doc.DocInfo;
+import team.snof.simplesearch.search.model.dao.index.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.storage.DocLenStorage;
@@ -23,8 +23,10 @@ public  class SortLogic {
 
     @Autowired
     DocLenStorage docLenStorage;
+
     @Autowired
     IndexPartialStorage indexPartialStorage;
+
     @Autowired
     WordSegmentation wordSegmentation;
 
@@ -34,38 +36,44 @@ public  class SortLogic {
     // 最多进行相关搜索检索的文档
     private static final int MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH = 6;
 
-    private static final double k_3 = 1.5;  // k3  1.2~2
+    // BM25参数 k3  1.2~2
+    private static final double k_3 = 1.5;
 
-    //文档排序
+    /**
+     * 文档排序逻辑
+     * @param indexs
+     * @param wordToFreqMap
+     * @return 已排序文档ids
+     */
     public List<String> docSort(List<Index> indexs, Map<String, Integer> wordToFreqMap) {
         //1.计算文档对应的相似度
-        HashMap<String, BigDecimal> doc2Similarity = new HashMap<>();//kv <docID,similarity>
+        HashMap<String, BigDecimal> docId2Similarity = new HashMap<>();
         for (Index index : indexs) {
             String word = index.getIndexKey();
             for (DocInfo doc : index.getDocInfoList()) {
                 BigDecimal corr = doc.getCorr().multiply(new BigDecimal((k_3 + 1) * wordToFreqMap.get(word)))
                         .divide(new BigDecimal(k_3 + wordToFreqMap.get(word)), 3, RoundingMode.HALF_EVEN);
-                doc2Similarity.put(doc.getDocId(), doc2Similarity.getOrDefault(doc.getDocId(), new BigDecimal(0)).add(corr));
+                docId2Similarity.put(doc.getDocId(), docId2Similarity.getOrDefault(doc.getDocId(), new BigDecimal(0)).add(corr));
             }
         }
 
         //2.按相似度从高到低排序
-        Doc4Sort[] docs = new Doc4Sort[doc2Similarity.size()];
+        Doc4Sort[] docs = new Doc4Sort[docId2Similarity.size()];
         int idx = 0;
-        for(Map.Entry<String,BigDecimal> entry:doc2Similarity.entrySet()){
+        for(Map.Entry<String,BigDecimal> entry:docId2Similarity.entrySet()){
             docs[idx++] = new Doc4Sort(entry.getKey(),entry.getValue());
         }
-        List<String> orderedDocs = new ArrayList<>();//DocId
+        List<String> orderedDocIds = new ArrayList<>();
         Arrays.sort(docs,Collections.reverseOrder());  // 内部改写了compareTo方法 未加@Override
 
         for(Doc4Sort doc:docs){
-            orderedDocs.add(doc.getDocId());
+            orderedDocIds.add(doc.getDocId());
         }
-        return orderedDocs;  // list(DocId)  ordered
+        return orderedDocIds;
     }
 
     /**
-     * 返回的list中不包含空值或重复词
+     * 相关搜索排序逻辑，返回的list中不包含空值或重复词
      * @param docs
      * @param wordToFreqMap
      * @return
@@ -141,7 +149,9 @@ public  class SortLogic {
         return new ArrayList<>(relatedSearch);
     }
 
-    // 计算单个分词的IDF  （未考虑单词与query关联度）
+    /**
+     *  计算单个分词的IDF  （未考虑单词与query关联度）
+     */
     public BigDecimal calWordIDF(String word, long docTotalNum) {
         // 包含分词的文档数目
         IndexPartial indexPartial = indexPartialStorage.getIndexPartial(word);
@@ -153,6 +163,12 @@ public  class SortLogic {
         return wordIDF;
     }
 
+    /**
+     * 对单个分词计算相关搜索
+     * @param caption
+     * @param keyWord
+     * @return
+     */
     public String calRelatedSearch(String caption, String keyWord) {
         // 对文档分词
         List<String> wordList = null;
@@ -173,6 +189,13 @@ public  class SortLogic {
         return relatedQuery;
     }
 
+    /**
+     * 对两个分词计算相关搜索
+     * @param caption
+     * @param keyWord_1
+     * @param keyWord_2
+     * @return
+     */
     public String calRelatedSearch(String caption, String keyWord_1, String keyWord_2) {
         // 对文档分词
         List<String> wordList = null;

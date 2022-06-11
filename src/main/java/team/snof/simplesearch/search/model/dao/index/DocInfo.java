@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.model.dao.doc;
+package team.snof.simplesearch.search.model.dao.index;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,8 +12,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class DocInfo implements Serializable {
 
-    private String docId; // 文档的id
+    // 文档的id
+    private String docId;
 
-    private BigDecimal corr;  // 相关度系数
+    // 相关度系数（分词权重*分词文档关联度）
+    private BigDecimal corr;
 
 }

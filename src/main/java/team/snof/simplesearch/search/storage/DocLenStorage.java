@@ -1,10 +1,6 @@
 package team.snof.simplesearch.search.storage;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.result.InsertManyResult;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -13,14 +9,13 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
 
-import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @Component
 public class DocLenStorage {
+
     @Autowired
     MongoTemplate mongoTemplate;
 
@@ -51,7 +46,6 @@ public class DocLenStorage {
             return 0L;
         }
         return doc_length.getDocLen();
-
     }
 
 }

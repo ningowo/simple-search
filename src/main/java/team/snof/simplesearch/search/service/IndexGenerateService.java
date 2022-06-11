@@ -54,23 +54,4 @@ public class IndexGenerateService {
         log.info("索引构建完成！");
     }
 
-//    public void generateMultiple(String root, String path) throws Exception {
-//        // 获取地址列表
-//        File file = new File(root);
-//        List<String> fileNameList = List.of(file.list());
-//
-//        // 从csv文件获取Doc
-//        for (String fileName: fileNameList) {
-//            String filePath = root + fileName;
-//            List<Doc> docList = CSVFileReader.readFile(filePath);
-//
-//            // 解析文件和存储文件
-//            docParser.parse(docList);
-//            System.out.println("解析文件和存储文件");
-//        }
-//
-//        // 构建索引并存储
-//        indexBuilder.buildIndexes();
-//        System.out.println("构建索引并存储");
-//    }
 }

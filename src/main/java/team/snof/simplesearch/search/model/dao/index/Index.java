@@ -3,7 +3,6 @@ package team.snof.simplesearch.search.model.dao.index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 
 import java.io.Serializable;
 import java.util.List;
@@ -12,7 +11,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Index implements Serializable {
-    public String indexKey; // 分词
+
+    // 分词
+    public String indexKey;
 
     public List<DocInfo> docInfoList;
 

@@ -10,7 +10,6 @@ import java.util.List;
 /**
  *  中间表word_temp的dao
  */
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

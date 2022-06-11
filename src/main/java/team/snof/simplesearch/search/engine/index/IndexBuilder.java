@@ -2,10 +2,9 @@ package team.snof.simplesearch.search.engine.index;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.CollectionSpliter;
-import team.snof.simplesearch.search.model.dao.doc.DocInfo;
+import team.snof.simplesearch.search.model.dao.index.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.model.dao.index.TempData;
@@ -130,7 +129,7 @@ public class IndexBuilder {
     }
 
     /**
-     * 对word_temp的单条记录word-list计算关联度
+     * 对word_temp的单条记录计算分词文档关联度
      *
      * @param tempData
      * @return wordDocCorr
@@ -139,8 +138,6 @@ public class IndexBuilder {
         String docId = tempData.getDocId();
         long docLen = docLenStorage.getDocLen(docId);
         int wordFreq = tempData.getWordFreq();
-
-        // 计算分词文档关联度
 
         return BigDecimal.valueOf(tempData.getWordFreq())
                 .multiply(BigDecimal.valueOf(k_1 + 1))
@@ -160,8 +157,6 @@ public class IndexBuilder {
             long allDocsWordFreq = wordToAllDocsWordFreqMap.get(word);
             // 计算分词权重
             double mathLog = Math.log((docTotalNum - allDocsWordFreq + 0.5) / (allDocsWordFreq + 0.5));
-
-            log.info("calcWordsWeight: docTotalNum={}, allDocsWordFreq={}", docTotalNum, allDocsWordFreq);
 
             // double转BigDecimal时，要注意精度处理，不然浮点数表示时后面会有很长一串，比如2.230000000000000234这样
             BigDecimal wordWeight = new BigDecimal(mathLog, new MathContext(5, RoundingMode.HALF_EVEN));
