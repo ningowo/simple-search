@@ -66,7 +66,7 @@ public class IndexBuilder {
             wordToAllDocsWordFreqMap.put(indexPartial.getIndexKey(), (long) indexPartial.getTempDataList().size());
         }
 
-        Map<String, BigDecimal> wordWeightMap = calcWordsWeight(docTotalNum, wordToAllDocsWordFreqMap);
+        Map<String, BigDecimal> wordWeightMap = calcWordsWeight(wordToAllDocsWordFreqMap);
         log.info("分词权重计算完成, wordWeightMap.size():" + wordWeightMap.size());
 
 
@@ -119,7 +119,7 @@ public class IndexBuilder {
 
             // 3. 构建索引
             // docInfoList根据关联度corr 降序排序
-//            docInfoList.sort((o1, o2) -> o2.getCorr().compareTo(o1.getCorr()));
+            docInfoList.sort((o1, o2) -> o2.getCorr().compareTo(o1.getCorr()));
 
             Index index = new Index(word, docInfoList);
             indexList.add(index);
@@ -136,7 +136,7 @@ public class IndexBuilder {
      * @return wordDocCorr
      */
     private BigDecimal calcWordDocCorr(TempData tempData) {
-        long docId = tempData.getDocId();
+        String docId = tempData.getDocId();
         long docLen = docLenStorage.getDocLen(docId);
         int wordFreq = tempData.getWordFreq();
 
@@ -150,17 +150,18 @@ public class IndexBuilder {
 
     /**
      * 对word_temp里所有分词计算分词权重
-     * @param docTotalNum
      * @param wordToAllDocsWordFreqMap
      * @return
      */
-    private Map<String, BigDecimal> calcWordsWeight(long docTotalNum, Map<String, Long> wordToAllDocsWordFreqMap) {
+    private Map<String, BigDecimal> calcWordsWeight(Map<String, Long> wordToAllDocsWordFreqMap) {
         Map<String, BigDecimal> wordWeightMap = new HashMap<>();
         for (String word : wordToAllDocsWordFreqMap.keySet()) {
 
-            long AllDocsWordFreq = wordToAllDocsWordFreqMap.get(word);
+            long allDocsWordFreq = wordToAllDocsWordFreqMap.get(word);
             // 计算分词权重
-            double mathLog = Math.log((docTotalNum - AllDocsWordFreq + 0.5) / (AllDocsWordFreq + 0.5));
+            double mathLog = Math.log((docTotalNum - allDocsWordFreq + 0.5) / (allDocsWordFreq + 0.5));
+
+            log.info("calcWordsWeight: docTotalNum={}, allDocsWordFreq={}", docTotalNum, allDocsWordFreq);
 
             // double转BigDecimal时，要注意精度处理，不然浮点数表示时后面会有很长一串，比如2.230000000000000234这样
             BigDecimal wordWeight = new BigDecimal(mathLog, new MathContext(5, RoundingMode.HALF_EVEN));

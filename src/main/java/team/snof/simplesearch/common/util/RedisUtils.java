@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 来源：https://www.cnblogs.com/myitnews/p/12297815.html
+ * 对lGet和lGetAll进行修改
  */
 @Component
 public class RedisUtils {

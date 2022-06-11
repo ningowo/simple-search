@@ -66,7 +66,7 @@ public class CSVFileReader {
                 }
                 String url = values[0];
                 String caption = values[1];
-                docs.add(new Doc(0L, url, caption));
+                docs.add(new Doc("", url, caption));
             }
         } catch (IOException | CsvValidationException | ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();

@@ -9,7 +9,7 @@ import java.net.NetworkInterface;
  */
 public class SnowFlakeIDGenerator {
 
-    private static SnowFlake snowFlake = null;
+    private static SnowFlake snowFlake;
 
     static {
         snowFlake = new SnowFlake();

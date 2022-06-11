@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-class IndexGenerateRunnerTest {
+class IndexGenerateServiceTest {
 
 //    @Test
 //    void generate() throws Exception {

@@ -16,7 +16,7 @@ import team.snof.simplesearch.search.model.dao.doc.Doc;
 public class DocVO {
 
     @ApiModelProperty
-    public Long docId;
+    public String docId;
 
     @ApiModelProperty
     public String url;
@@ -26,7 +26,7 @@ public class DocVO {
 
     public static DocVO buildDocVO(Doc doc) {
         return DocVO.builder()
-                .docId(doc.getSnowflakeDocId())
+                .docId(doc.getId())
                 .url(doc.getUrl())
                 .caption(doc.getCaption())
                 .build();

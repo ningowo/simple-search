@@ -5,9 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
-import team.snof.simplesearch.search.model.dao.doc.Doc4Sort;
+import team.snof.simplesearch.search.model.bo.Doc4Sort;
 import team.snof.simplesearch.search.model.dao.doc.DocInfo;
 import team.snof.simplesearch.search.model.dao.index.Index;
+import team.snof.simplesearch.search.model.dao.index.IndexPartial;
 import team.snof.simplesearch.search.storage.DocLenStorage;
 import team.snof.simplesearch.search.storage.IndexPartialStorage;
 
@@ -27,8 +28,6 @@ public  class SortLogic {
     @Autowired
     WordSegmentation wordSegmentation;
 
-    private static HashMap<String,BigDecimal> word2IDF = new HashMap<>();
-
     // 最多需要获取的相关搜索条数
     private static final int MAX_NUM_RELATED_SEARCH_TO_FIND = 8;
 
@@ -38,9 +37,9 @@ public  class SortLogic {
     private static final double k_3 = 1.5;  // k3  1.2~2
 
     //文档排序
-    public List<Long> docSort(List<Index> indexs, Map<String, Integer> wordToFreqMap) {
+    public List<String> docSort(List<Index> indexs, Map<String, Integer> wordToFreqMap) {
         //1.计算文档对应的相似度
-        HashMap<Long, BigDecimal> doc2Similarity = new HashMap<>();//kv <docID,similarity>
+        HashMap<String, BigDecimal> doc2Similarity = new HashMap<>();//kv <docID,similarity>
         for (Index index : indexs) {
             String word = index.getIndexKey();
             for (DocInfo doc : index.getDocInfoList()) {
@@ -53,10 +52,10 @@ public  class SortLogic {
         //2.按相似度从高到低排序
         Doc4Sort[] docs = new Doc4Sort[doc2Similarity.size()];
         int idx = 0;
-        for(Map.Entry<Long,BigDecimal> entry:doc2Similarity.entrySet()){
+        for(Map.Entry<String,BigDecimal> entry:doc2Similarity.entrySet()){
             docs[idx++] = new Doc4Sort(entry.getKey(),entry.getValue());
         }
-        List<Long> orderedDocs = new ArrayList<>();//DocId
+        List<String> orderedDocs = new ArrayList<>();//DocId
         Arrays.sort(docs,Collections.reverseOrder());  // 内部改写了compareTo方法 未加@Override
 
         for(Doc4Sort doc:docs){
@@ -88,7 +87,7 @@ public  class SortLogic {
             for (Doc doc : docsToParse) {
                 // 对单个文档和要解析的单个分词进行解析
                 String relatedWord = calRelatedSearch(doc.getCaption(), keyWord);
-                if (!relatedWord.equals(keyWord)) {
+                if (!relatedWord.equals(keyWord) && !relatedWord.isBlank()) {
                     relatedSearch.add(relatedWord);
                 }
                 if (relatedSearch.size() > 8) {
@@ -145,7 +144,11 @@ public  class SortLogic {
     // 计算单个分词的IDF  （未考虑单词与query关联度）
     public BigDecimal calWordIDF(String word, long docTotalNum) {
         // 包含分词的文档数目
-        long wordDocNum = indexPartialStorage.getIndexPartial(word).getTempDataList().size();
+        IndexPartial indexPartial = indexPartialStorage.getIndexPartial(word);
+        if (indexPartial == null) {
+            return new BigDecimal(0);
+        }
+        long wordDocNum = indexPartial.getTempDataList().size();
         BigDecimal wordIDF = BigDecimal.valueOf(Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5)));
         return wordIDF;
     }
@@ -190,30 +193,4 @@ public  class SortLogic {
         return relatedQuery;
     }
 
-    // 计算单词的IDF
-//    private HashMap<String, BigDecimal> calIDF(long doc_num) {
-//        // 1. 统计包含某个分词的文档个数  <word,wordDocNum>
-////        List<String> wordListTotal = indexPartialStorage.getAllIndexPartialWord();
-////        HashMap<String, Long> word2FreqMap = indexPartialStorage.getWordDocNum(wordListTotal);
-//
-//        // 2. 计算IDF  <word,IDF>
-//        HashMap<String, BigDecimal> word2IDF = new HashMap<>();
-//        for (String word : word2FreqMap.keySet()) {
-//            long wordDocNum = word2FreqMap.get(word);
-//            BigDecimal weight = BigDecimal.valueOf(Math.log((doc_num - wordDocNum + 0.5) / (wordDocNum + 0.5)));
-//            word2IDF.put(word, weight);
-//        }
-//        return word2IDF;
-//    }
-
-    // 计算某一文档的词频
-    private HashMap<String,BigDecimal> calTF(List<String> wordList){
-        // <word,term frequency>
-        HashMap<String,BigDecimal> word2Num = new HashMap<>();
-
-        for (String word : wordList) {
-            word2Num.put(word, word2Num.getOrDefault(word, BigDecimal.valueOf(0)).add(BigDecimal.valueOf(1)));
-        }
-        return word2Num;
-    }
 }

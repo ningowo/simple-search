@@ -8,7 +8,7 @@ import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.storage.IndexStorage;
-import team.snof.simplesearch.search.storage.OssStorage;
+import team.snof.simplesearch.search.storage.DocStorage;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +27,7 @@ public class EngineImpl implements Engine {
     SortLogic sortLogic;
 
     @Autowired
-    OssStorage ossStorage;
+    DocStorage docStorage;
 
     private final String indexRedisFormat = "engine:index:%s:string";//索引redis格式串
     private final int expireDuration = 10;//倒排索引缓存时间(min)
@@ -38,7 +38,7 @@ public class EngineImpl implements Engine {
         List<Index> indexs = batchFindIndexes(words);
 
         // 文档排序
-        List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
+        List<String> docIds = sortLogic.docSort(indexs,wordToFreqMap);
 
         // 获取文档
         List<Doc> docs = batchFindDocs(docIds);
@@ -54,7 +54,7 @@ public class EngineImpl implements Engine {
      * @param wordToFreqMap
      * @return
      */
-    public List<Long> findSortedDocIds(Map<String, Integer> wordToFreqMap) {
+    public List<String> findSortedDocIds(Map<String, Integer> wordToFreqMap) {
         // 获取索引
         List<String> words = new ArrayList<>(wordToFreqMap.keySet());
         List<Index> indexs = batchFindIndexes(words);
@@ -79,8 +79,8 @@ public class EngineImpl implements Engine {
         List<String> words = new ArrayList<>(wordToFreqMap.keySet());
 
         List<Index> indexs = batchFindIndexes(words);
-        List<Long> docIds = sortLogic.docSort(indexs,wordToFreqMap);
-        List<Long> partialDocIds = new ArrayList<>();
+        List<String> docIds = sortLogic.docSort(indexs,wordToFreqMap);
+        List<String> partialDocIds = new ArrayList<>();
         for(int i = offset; i < docIds.size() && i < offset + limit; ++i){//避免越界
             partialDocIds.add(docIds.get(i));
         }
@@ -90,8 +90,8 @@ public class EngineImpl implements Engine {
     }
 
     // 文档查询
-    public Doc findDoc(Long docId){
-        return ossStorage.getBySnowId(docId);
+    public Doc findDoc(String docId){
+        return docStorage.getDocById(docId);
     }
 
     /**
@@ -100,11 +100,11 @@ public class EngineImpl implements Engine {
      * @param docIds
      * @return
      */
-    public List<Doc> batchFindDocs(List<Long> docIds){// 常用
+    public List<Doc> batchFindDocs(List<String> docIds){// 常用
         log.info("开始批获取文档，请求文档数量为: " + docIds.size());
         List<Doc> docs = new ArrayList<>();
-        for(Long docId: docIds){
-            docs.add(ossStorage.getBySnowId(docId));
+        for(String docId: docIds){
+            docs.add(docStorage.getDocById(docId));
         }
         log.info("文档获取完成! 文档数量为:" + docs.size());
         return docs;

@@ -2,12 +2,11 @@ package team.snof.simplesearch.search.engine.index;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.CollectionSpliter;
-import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.search.storage.OssStorage;
 import team.snof.simplesearch.common.util.SnowFlakeIDGenerator;
+import team.snof.simplesearch.common.util.WordSegmentation;
+import team.snof.simplesearch.search.storage.DocStorage;
 import team.snof.simplesearch.search.model.dao.doc.Doc;
 import team.snof.simplesearch.search.model.dao.doc.DocLen;
 import team.snof.simplesearch.search.model.dao.index.IndexPartial;
@@ -33,7 +32,7 @@ public class DocParser {
     DocLenStorage docLenStorage;
 
     @Autowired
-    OssStorage ossStorage;
+    DocStorage docStorage;
 
     // 这里用CallerRunsPolicy阻塞主线程
     @Autowired
@@ -44,24 +43,18 @@ public class DocParser {
         CollectionSpliter<Doc> spliter = new CollectionSpliter<>();
         List<List<Doc>> docLists = spliter.splitList(docList, 500);
 
-        CountDownLatch countDownLatch = new CountDownLatch(docList.size());
+        CountDownLatch countDownLatch = new CountDownLatch(docLists.size());
         for (List<Doc> docs : docLists) {
             taskExecutor.execute(() -> {
                 for (Doc doc : docs) {
 
-                    // 1. 生成雪花id
-                    long docId = SnowFlakeIDGenerator.generateSnowFlakeId();
-                    doc.setSnowflakeDocId(docId);
+                    // 1. 生成雪花id (这里暂时用雪花id，来不及改了，应该用mongodb自己生成的_id的）
+                    String docId = String.valueOf(SnowFlakeIDGenerator.generateSnowFlakeId());
+                    doc.setId(docId);
+                    docStorage.addDoc(doc);
 
                     // 2. 解析获取分词在文档中词频
-                    parseDoc(doc.getCaption(), doc.getSnowflakeDocId());
-
-                    // 3. 上传到阿里云
-                    try {
-                        ossStorage.addDoc(doc);
-                    } catch (Exception e) {
-                        log.error("向阿里云oss添加文档失败：" + doc);
-                    }
+                    parseDoc(doc.getCaption(), docId);
                 }
 
                 log.info("一组读取完毕，数量：" + docs.size());
@@ -77,7 +70,7 @@ public class DocParser {
     }
 
     // 解析每个doc中间参数存入word_temp表中
-    public void parseDoc(String caption, long docId) {
+    public void parseDoc(String caption, String docId) {
         Map<String, Integer> wordToFreqMap = null;
         try {
             wordToFreqMap = wordSegmentation.segment(caption);

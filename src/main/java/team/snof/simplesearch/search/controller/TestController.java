@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import team.snof.simplesearch.search.engine.Engine;
-import team.snof.simplesearch.search.engine.index.IndexGenerateRunner;
+import team.snof.simplesearch.search.service.IndexGenerateService;
 import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
 import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.vo.ResultVO;
@@ -30,76 +30,13 @@ import java.util.Map;
  * 4. 访问http://localhost:8080/search/test/eng，即可简单测试engine.find和engine.rangeFind这两个接口
  * 5. （可选）自定义测试方法，修改engineTest方法的参数和内容，自己在controller里传参进行测试
  */
-@Api("搜索接口")
+@Api("测试接口")
 @RestController()
 @RequestMapping("/search/test")
 public class TestController {
 
     @Autowired
-    IndexGenerateRunner runner;
-
-    @Autowired
-    IndexStorage indexStorage;
-
-    @Autowired
     Engine engine;
-
-    @Autowired
-    MongoTemplate mongoTemplate;
-
-    @RequestMapping("/index/parsedoc")
-    public ResultVO getAndParseFile(@RequestParam String filePath, @RequestParam boolean defaultPath) throws Exception {
-
-        String path;
-        if (defaultPath) {
-            path = "D:\\ByteDanceCamp\\test20.csv";
-        } else {
-            path = filePath;
-        }
-        runner.parseAndStoreDocs(path);
-
-        return ResultVO.newSuccessResult();
-    }
-
-    @RequestMapping("/index/build")
-    public ResultVO buildIndex() {
-
-        runner.buildIndex();
-
-        return ResultVO.newSuccessResult();
-    }
-
-    @RequestMapping("/index/findall")
-    public ResultVO findAllIndex() {
-        List<Index> all = indexStorage.findAll();
-
-        return ResultVO.newSuccessResult(all);
-    }
-
-    @RequestMapping("/index/findind")
-    public List<Index> findByKey(String key, boolean defaultkey) {
-        String indexKey = key;
-        if (defaultkey) {
-            indexKey = "包邮";
-        }
-
-        return indexStorage.findByKey(indexKey);
-    }
-
-    @RequestMapping(value = "/generate", method = RequestMethod.GET)
-    public ResultVO<String> generate(@RequestParam String filePath, @RequestParam boolean defaultPath) throws Exception {
-
-        String path;
-        if (defaultPath) {
-            path = "D:\\ByteDanceCamp\\test20.csv";
-        } else {
-            path = filePath;
-        }
-        System.out.println("开始解析文档");
-        runner.generate(path);
-
-        return ResultVO.newSuccessResult("Result: " + path);
-    }
 
     @RequestMapping(value = "/eng", method = RequestMethod.GET)
     public ResultVO<String> engineTest(@RequestParam String word) {

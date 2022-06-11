@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocInfo implements Serializable {
-    private Long docId; // 文档的id
+
+    private String docId; // 文档的id
+
     private BigDecimal corr;  // 相关度系数
+
 }

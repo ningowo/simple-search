@@ -71,12 +71,12 @@ public class SearchService {
 
         // 获取排好序的文档id
         String queryToDocIdsCacheKey = "search:page:" + query + ":list";
-        List<Long> sortedAllDocIds = searchEngineOrCacheForDocIds(queryToDocIdsCacheKey, wordToFreqMap);
+        List<String> sortedAllDocIds = searchEngineOrCacheForDocIds(queryToDocIdsCacheKey, wordToFreqMap);
         if (sortedAllDocIds.isEmpty()) {
             return getEmptyResponseVO(request);
         }
 
-        Map<Long, Doc> docMap = new HashMap<>();
+        Map<String, Doc> docMap = new HashMap<>();
         // 1. 尝试获取相关搜索
         String queryToRelatedSearchKey = "search:related:" + query + ":list";
         List<String> relatedSearch = redisUtils.lGetAll(queryToRelatedSearchKey);
@@ -85,9 +85,9 @@ public class SearchService {
         if (relatedSearch.isEmpty()) {
             // 查询doc
             int end = Math.min(MAX_DOC_NUM_FOR_RELATED_SEARCH, sortedAllDocIds.size());
-            List<Long> lessDocIdsForRelatedSearch = sortedAllDocIds.subList(0, end);
+            List<String> lessDocIdsForRelatedSearch = sortedAllDocIds.subList(0, end);
             List<Doc> lessDocs = engine.batchFindDocs(lessDocIdsForRelatedSearch);
-            lessDocs.forEach(doc -> docMap.put(doc.getSnowflakeDocId(), doc));
+            lessDocs.forEach(doc -> docMap.put(doc.getId(), doc));
 
             // 更新缓存（只根据query生成的相关搜索）
             relatedSearch = engine.findRelatedSearch(lessDocs, wordToFreqMap);
@@ -95,8 +95,8 @@ public class SearchService {
         }
 
         // 过滤
-        Set<Long> filterDocIds = findDocIdsByWord(filterWordList);
-        List<Long> filteredAndSortedDocIds = filterDocIdsByIds(sortedAllDocIds, filterDocIds);
+        Set<String> filterDocIds = findDocIdsByWord(filterWordList);
+        List<String> filteredAndSortedDocIds = filterDocIdsByIds(sortedAllDocIds, filterDocIds);
         int totalDocNum = filteredAndSortedDocIds.size();
         if (totalDocNum == 0) {
             return getEmptyResponseVO(request);
@@ -111,11 +111,11 @@ public class SearchService {
             throw new IllegalArgumentException("所查询的记录超出范围!");
         }
         int end = Math.min(pageNum * pageSize, totalDocNum);
-        List<Long> pageDocIds = filteredAndSortedDocIds.subList(start, end);
+        List<String> pageDocIds = filteredAndSortedDocIds.subList(start, end);
 
         // 查询文档
         List<Doc> resDocs = new ArrayList<>();
-        for (Long docId : pageDocIds) {
+        for (String docId : pageDocIds) {
             if (docMap.containsKey(docId)) {
                 resDocs.add(docMap.get(docId));
             } else {
@@ -126,9 +126,9 @@ public class SearchService {
         return convertAndBuildResponse(resDocs, relatedSearch, request);
     }
 
-    private List<Long> searchEngineOrCacheForDocIds(String queryToDocIdsCacheKey, HashMap<String, Integer> wordToFreqMap) {
+    private List<String> searchEngineOrCacheForDocIds(String queryToDocIdsCacheKey, HashMap<String, Integer> wordToFreqMap) {
         // 这里先全部查出来，在业务侧做筛选。不然担心有一开始hasKey是true，get时缓存过期的情况。之后再优化。
-        List<Long> sortedDocIds = redisUtils.lGetAll(queryToDocIdsCacheKey);
+        List<String> sortedDocIds = redisUtils.lGetAll(queryToDocIdsCacheKey);
 
         // 如果缓存里有
         if (!sortedDocIds.isEmpty()) {
@@ -162,7 +162,7 @@ public class SearchService {
                 .build();
     }
 
-    private Set<Long> findDocIdsByWord(List<String> words) {
+    private Set<String> findDocIdsByWord(List<String> words) {
         if (words.size() == 0) {
             return Collections.emptySet();
         }
@@ -170,7 +170,7 @@ public class SearchService {
         // 获取过滤词对应索引
         List<Index> indices = engine.batchFindIndexes(words);
         // 从索引获取所有要过滤的docids
-        Set<Long> filterDocIds = new HashSet<>();
+        Set<String> filterDocIds = new HashSet<>();
         for (Index index : indices) {
             List<DocInfo> docIdAndCorrList = index.getDocInfoList();
             for (DocInfo docInfo : docIdAndCorrList) {
@@ -181,7 +181,7 @@ public class SearchService {
         return filterDocIds;
     }
 
-    private List<Long> filterDocIdsByIds(List<Long> docIds, Set<Long> idsToFilter) {
+    private List<String> filterDocIdsByIds(List<String> docIds, Set<String> idsToFilter) {
         if (idsToFilter.isEmpty()) {
             return docIds;
         }
@@ -191,13 +191,13 @@ public class SearchService {
                 .collect(Collectors.toList());
     }
 
-    private List<Doc> filterDocsByIds(List<Doc> docs, Set<Long> idsToFilter) {
+    private List<Doc> filterDocsByIds(List<Doc> docs, Set<String> idsToFilter) {
         if (idsToFilter.isEmpty()) {
             return docs;
         }
 
         return docs.stream()
-                .filter(doc -> !idsToFilter.contains(doc.getSnowflakeDocId()))
+                .filter(doc -> !idsToFilter.contains(doc.getId()))
                 .collect(Collectors.toList());
     }
 

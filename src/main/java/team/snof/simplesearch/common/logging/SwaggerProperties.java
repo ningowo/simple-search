@@ -16,4 +16,5 @@ public class SwaggerProperties {
     private String contactName;
     private String contactEmail;
     private String contactUrl;
+
 }

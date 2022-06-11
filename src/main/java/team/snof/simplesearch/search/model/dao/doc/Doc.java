@@ -3,6 +3,7 @@ package team.snof.simplesearch.search.model.dao.doc;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 
@@ -10,7 +11,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class Doc implements Serializable {
 
-    public Long SnowflakeDocId;
+    @Id
+    public String id;
 
     public String url;
 
