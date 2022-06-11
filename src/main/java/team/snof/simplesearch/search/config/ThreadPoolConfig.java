@@ -13,8 +13,26 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 public class ThreadPoolConfig {
 
-    @Bean("taskExecutor")
-    public Executor taskExecutor() {
+    @Bean("docParserExecutor")
+    public Executor docParserExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        //设置线程池参数信息
+        taskExecutor.setCorePoolSize(0);
+        taskExecutor.setMaxPoolSize(1);
+        taskExecutor.setQueueCapacity(0);
+        taskExecutor.setKeepAliveSeconds(60);
+        taskExecutor.setThreadNamePrefix("myExecutor--");
+        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        taskExecutor.setAwaitTerminationSeconds(60);
+        //修改拒绝策略为使用当前线程执行
+        taskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        //初始化线程池
+        taskExecutor.initialize();
+        return taskExecutor;
+    }
+
+    @Bean("indexBuilderExecutor")
+    public Executor indexBuilderExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         //设置线程池参数信息
         taskExecutor.setCorePoolSize(0);

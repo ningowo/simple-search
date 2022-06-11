@@ -32,7 +32,7 @@ public class IndexBuilder {
 
     // 这里用CallerRunsPolicy阻塞主线程
     @Autowired
-    private Executor taskExecutor;
+    private Executor indexBuilderExecutor;
 
     // BM25算法常量定义
     private final double k_1 = 1.5;  // k1可取1.2--2
@@ -82,7 +82,7 @@ public class IndexBuilder {
 
         // 对每一组分词的，一组indexPartial
         for (List<IndexPartial> indexPartialPart : indexPartialParts) {
-            taskExecutor.execute(() -> {
+            indexBuilderExecutor.execute(() -> {
                 calcIndexAndSave(indexPartialPart, wordWeightMap);
                 countDownLatch.countDown();
                 log.info("一组分词索引计算完成...");

@@ -20,7 +20,7 @@ public class IndexGenerateService {
     @Autowired
     IndexBuilder indexBuilder;
 
-    public void generate(String path) throws Exception {
+    public void generate(String path) {
         // 从csv文件获取Doc
         log.info("开始读取文件...");
         List<Doc> docList = CSVFileReader.readFile(path);

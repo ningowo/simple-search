@@ -24,13 +24,13 @@ public class IndexPartialStorage {
     }
 
     public IndexPartial getIndexPartial(String word) {
-        Query query = new Query().addCriteria(Criteria.where("indexKey").is(word));
+        Query query = new Query().addCriteria(Criteria.where("_id").is(word));
         return mongoTemplate.findOne(query, IndexPartial.class, "word_temp");
     }
 
     // 若不存在word记录 则新增存储  若存在则读word对应的list进行扩充更新
     public void saveIndexPartial(IndexPartial indexPartial) {
-        Query query = new Query().addCriteria(Criteria.where("indexKey").is(indexPartial.getIndexKey()));
+        Query query = new Query().addCriteria(Criteria.where("_id").is(indexPartial.getIndexKey()));
         IndexPartial wordIndexPartial = mongoTemplate.findOne(query, IndexPartial.class, "word_temp");
         if (wordIndexPartial == null) {
             mongoTemplate.save(indexPartial, "word_temp");
