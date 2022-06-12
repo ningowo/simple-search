@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import springfox.documentation.schema.Collections;
 import team.snof.simplesearch.search.model.vo.DatasetVO;
 import team.snof.simplesearch.search.model.vo.FavouriteVO;
 import team.snof.simplesearch.search.model.vo.ResultVO;
@@ -17,6 +18,7 @@ import team.snof.simplesearch.user.model.bo.favorite.Dataset;
 import team.snof.simplesearch.user.model.bo.favorite.Favourite;
 
 import javax.management.InstanceAlreadyExistsException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -94,7 +96,9 @@ public class FavouriteService {
         Wrapper<Collection> query = new QueryWrapper<Collection>().lambda()
                 .eq(Collection::getFavouriteId, favouriteId);
         List<Collection> collectionList = collectionMapper.selectList(query);
-        List<Dataset> datasetList = datasetMapper.searchDataSet(collectionList);
+        List<Dataset> datasetList = new ArrayList<>();
+        if (collectionList != null && collectionList.size() != 0)
+            datasetList = datasetMapper.searchDataSet(collectionList);
         List<DatasetVO> datasetVOList = datasetList.stream().map(DatasetVO::buildDatasetVO).collect(Collectors.toList());
         return datasetVOList;
     }

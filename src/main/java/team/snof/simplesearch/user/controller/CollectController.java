@@ -4,11 +4,13 @@ import io.swagger.annotations.Api;
 import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import team.snof.simplesearch.search.model.vo.DatasetVO;
 import team.snof.simplesearch.search.model.vo.FavouriteVO;
 import team.snof.simplesearch.search.model.vo.ResultVO;
 import team.snof.simplesearch.user.service.FavouriteService;
 
 import javax.management.InstanceAlreadyExistsException;
+import java.util.List;
 
 /**
  * @author zhouyg
@@ -66,7 +68,9 @@ public class CollectController {
     @PostMapping("/article/show")
     public ResultVO showDataInFavourite(Integer favouriteId) {
         if (favouriteId == null) return ResultVO.newParamErrorResult("请选中收藏夹");
-        return ResultVO.newSuccessResult(favouriteService.showDataInFavourite(favouriteId));
+        List<DatasetVO> datasetVOList = favouriteService.showDataInFavourite(favouriteId);
+        if (datasetVOList.size() == 0) return ResultVO.newFailedResult("用户收藏夹为空");
+        return ResultVO.newSuccessResult(datasetVOList);
     }
 
     @PostMapping("/article/add")
