@@ -6,9 +6,12 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import team.snof.simplesearch.user.model.vo.DatasetVO;
-import team.snof.simplesearch.user.model.vo.FavouriteVO;
-import team.snof.simplesearch.user.model.vo.ResultVO;
+import team.snof.simplesearch.search.engine.EngineImpl;
+import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.vo.DatasetVO;
+import team.snof.simplesearch.search.model.vo.DocVO;
+import team.snof.simplesearch.search.model.vo.FavouriteVO;
+import team.snof.simplesearch.search.model.vo.ResultVO;
 import team.snof.simplesearch.user.mapper.favourite.CollectionMapper;
 import team.snof.simplesearch.user.mapper.favourite.DatasetMapper;
 import team.snof.simplesearch.user.mapper.favourite.FavouriteMapper;
@@ -34,6 +37,9 @@ public class FavouriteService {
 
     @Autowired
     private DatasetMapper datasetMapper;
+
+    @Autowired
+    private EngineImpl engine;
 
     @Autowired
     private FavouriteMapper favouriteMapper;
@@ -86,19 +92,18 @@ public class FavouriteService {
     }
 
     //显示文章
-    //TODO 调用EngineImpl的查询文章接口返回结果
-    public List<DatasetVO> showDataInFavourite(Integer favouriteId) throws NotFoundException {
+    public List<DocVO> showDataInFavourite(Integer favouriteId) throws NotFoundException {
         checkFavouriteByFavouriteID(favouriteId);
         Wrapper<Collection> query = new QueryWrapper<Collection>().lambda()
                 .eq(Collection::getFavouriteId, favouriteId);
         List<Collection> collectionList = collectionMapper.selectList(query);
-        List<Dataset> datasetList = new ArrayList<>();
-        List<DatasetVO> datasetVOList = new ArrayList<>();
+        List<DocVO> docVOList = new ArrayList<>();
         if (collectionList != null && collectionList.size() > 0) {
-            datasetList = datasetMapper.searchDataSet(collectionList);
-            datasetVOList = datasetList.stream().map(DatasetVO::buildDatasetVO).collect(Collectors.toList());
+            List<String> DocIDList = collectionList.stream().map(Collection::getDataId).collect(Collectors.toList());
+            List<Doc> docs = engine.batchFindDocs(DocIDList);
+            docVOList = docs.stream().map(DocVO::buildDocVO).collect(Collectors.toList());
         }
-        return datasetVOList;
+        return docVOList;
     }
 
     //收藏文章

@@ -4,9 +4,10 @@ import io.swagger.annotations.Api;
 import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import team.snof.simplesearch.user.model.vo.DatasetVO;
-import team.snof.simplesearch.user.model.vo.FavouriteVO;
-import team.snof.simplesearch.user.model.vo.ResultVO;
+import team.snof.simplesearch.search.model.vo.DatasetVO;
+import team.snof.simplesearch.search.model.vo.DocVO;
+import team.snof.simplesearch.search.model.vo.FavouriteVO;
+import team.snof.simplesearch.search.model.vo.ResultVO;
 import team.snof.simplesearch.user.service.FavouriteService;
 
 import javax.management.InstanceAlreadyExistsException;
@@ -70,14 +71,14 @@ public class CollectController {
     @PostMapping("/article/show")
     public ResultVO showDataInFavourite(Integer favouriteId) {
         if (favouriteId == null) return ResultVO.newParamErrorResult("请选中收藏夹");
-        List<DatasetVO> datasetVOList = null;
+        List<DocVO> docVOList = null;
         try {
-            datasetVOList = favouriteService.showDataInFavourite(favouriteId);
+            docVOList = favouriteService.showDataInFavourite(favouriteId);
         } catch (NotFoundException e) {
             return ResultVO.newFailedResult(e.getMessage());
         }
-        if (datasetVOList.isEmpty() || datasetVOList.size() == 0) return ResultVO.newFailedResult("该收藏夹内容为空");
-        return ResultVO.newSuccessResult(datasetVOList);
+        if (docVOList.isEmpty() || docVOList.size() == 0) return ResultVO.newFailedResult("该收藏夹内容为空");
+        return ResultVO.newSuccessResult(docVOList);
     }
 
     @PostMapping("/article/add")
