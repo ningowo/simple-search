@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableField;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 
@@ -13,6 +15,8 @@ import lombok.Data;
  * @date 2022-05-28
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @TableName("collection")
 public class Collection {
 
@@ -23,9 +27,9 @@ public class Collection {
     private Integer favouriteId;
 
     @TableField("data_id")
-    private Integer dataId;
+    private String dataId;
 
-    public Collection(Integer favouriteId, Integer dataId) {
+    public Collection(Integer favouriteId, String dataId) {
         this.favouriteId = favouriteId;
         this.dataId = dataId;
     }

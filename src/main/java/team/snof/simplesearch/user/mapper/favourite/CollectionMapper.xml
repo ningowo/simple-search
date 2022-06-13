@@ -11,5 +11,12 @@
     <sql id="Base_Column_List">
         id, favourite_id, data_id
     </sql>
+    <select id="getCollectionByFavouriteID"
+            resultType="team.snof.simplesearch.user.model.bo.favorite.Collection">
+        select id, favourite_id, data_id from collection where 1 = 1
+        <if test="favouriteID != null">
+            and favourite_id = #{favouriteID};
+        </if>
+    </select>
 
 </mapper>
