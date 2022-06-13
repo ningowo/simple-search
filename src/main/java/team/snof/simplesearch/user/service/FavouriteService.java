@@ -6,10 +6,9 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import springfox.documentation.schema.Collections;
-import team.snof.simplesearch.search.model.vo.DatasetVO;
-import team.snof.simplesearch.search.model.vo.FavouriteVO;
-import team.snof.simplesearch.search.model.vo.ResultVO;
+import team.snof.simplesearch.user.model.vo.DatasetVO;
+import team.snof.simplesearch.user.model.vo.FavouriteVO;
+import team.snof.simplesearch.user.model.vo.ResultVO;
 import team.snof.simplesearch.user.mapper.favourite.CollectionMapper;
 import team.snof.simplesearch.user.mapper.favourite.DatasetMapper;
 import team.snof.simplesearch.user.mapper.favourite.FavouriteMapper;
@@ -42,7 +41,6 @@ public class FavouriteService {
 
     //新建收藏夹
     public FavouriteVO addFavourite(Integer userId, String favouriteName) throws InstanceAlreadyExistsException {
-
         Wrapper<Favourite> query = new QueryWrapper<Favourite>().lambda()
                 .eq(Favourite::getUserId, userId)
                 .eq(Favourite::getFavouriteName, favouriteName);
@@ -55,15 +53,10 @@ public class FavouriteService {
 
     //删除收藏夹
     public ResultVO deleteFavourite(Integer userId, String favouriteName) throws NotFoundException {
-        Wrapper<Favourite> queryFavourite = new QueryWrapper<Favourite>().lambda()
-                .eq(Favourite::getUserId, userId)
-                .eq(Favourite::getFavouriteName, favouriteName);
-        if (favouriteMapper.selectCount(queryFavourite) <= 0) {
-            throw new NotFoundException("收藏夹不存在");
-        }
-        Favourite favourite = favouriteMapper.selectOne(queryFavourite);
+        Wrapper<Favourite> favouriteQuery = checkFavouriteByUserIDAndFavouriteName(userId, favouriteName);
+        Favourite favourite = favouriteMapper.selectOne(favouriteQuery);
         //删除收藏夹
-        favouriteMapper.delete(queryFavourite);
+        favouriteMapper.delete(favouriteQuery);
         Wrapper<Collection> queryCollect = new QueryWrapper<Collection>().lambda()
                 .eq(Collection::getFavouriteId, favourite.getId());
         //删除收藏夹内对应的记录
@@ -72,14 +65,15 @@ public class FavouriteService {
     }
 
     //重命名收藏夹
-    public ResultVO renameFavourite(Integer userId, String originFavouriteName, String newFavouriteName) throws NotFoundException {
-        Wrapper<Favourite> queryFavourite = new UpdateWrapper<Favourite>().lambda()
+    public ResultVO renameFavourite(Integer userId, String originFavouriteName, String newFavouriteName) throws NotFoundException, InstanceAlreadyExistsException {
+        Wrapper<Favourite> queryOriginFavourite = checkFavouriteByUserIDAndFavouriteName(userId, originFavouriteName);
+        Wrapper<Favourite> queryNewFavourite = new QueryWrapper<Favourite>().lambda()
                 .eq(Favourite::getUserId, userId)
-                .eq(Favourite::getFavouriteName, originFavouriteName);
-        if (favouriteMapper.selectCount(queryFavourite) <= 0) {
-            throw new NotFoundException("收藏夹不存在");
+                .eq(Favourite::getFavouriteName, newFavouriteName);;
+        if (favouriteMapper.selectCount(queryNewFavourite) > 0) {
+            throw new InstanceAlreadyExistsException("已存在目标收藏夹，无法修改");
         }
-        favouriteMapper.update(new Favourite(userId, newFavouriteName), queryFavourite);
+        favouriteMapper.update(new Favourite(userId, newFavouriteName), queryOriginFavourite);
         return ResultVO.newSuccessResult("更新成功");
     }
 
@@ -92,19 +86,24 @@ public class FavouriteService {
     }
 
     //显示文章
-    public List<DatasetVO> showDataInFavourite(Integer favouriteId) {
+    //TODO 调用EngineImpl的查询文章接口返回结果
+    public List<DatasetVO> showDataInFavourite(Integer favouriteId) throws NotFoundException {
+        checkFavouriteByFavouriteID(favouriteId);
         Wrapper<Collection> query = new QueryWrapper<Collection>().lambda()
                 .eq(Collection::getFavouriteId, favouriteId);
         List<Collection> collectionList = collectionMapper.selectList(query);
         List<Dataset> datasetList = new ArrayList<>();
-        if (collectionList != null && collectionList.size() != 0)
+        List<DatasetVO> datasetVOList = new ArrayList<>();
+        if (collectionList != null && collectionList.size() > 0) {
             datasetList = datasetMapper.searchDataSet(collectionList);
-        List<DatasetVO> datasetVOList = datasetList.stream().map(DatasetVO::buildDatasetVO).collect(Collectors.toList());
+            datasetVOList = datasetList.stream().map(DatasetVO::buildDatasetVO).collect(Collectors.toList());
+        }
         return datasetVOList;
     }
 
     //收藏文章
-    public ResultVO addDataToFavourite(Integer favouriteId, Integer dataId) throws InstanceAlreadyExistsException {
+    public ResultVO addDataToFavourite(Integer favouriteId, String dataId) throws InstanceAlreadyExistsException, NotFoundException {
+        checkFavouriteByFavouriteID(favouriteId);
         Wrapper<Collection> query = new QueryWrapper<Collection>().lambda()
                 .eq(Collection::getFavouriteId, favouriteId)
                 .eq(Collection::getDataId, dataId);
@@ -117,13 +116,32 @@ public class FavouriteService {
 
     //取消文章收藏
     public ResultVO deleteDataFromFavourite(Integer favouriteId, Integer dataId) throws NotFoundException {
+        checkFavouriteByFavouriteID(favouriteId);
         Wrapper<Collection> query = new QueryWrapper<Collection>().lambda()
                 .eq(Collection::getFavouriteId, favouriteId)
                 .eq(Collection::getDataId, dataId);
-        if (collectionMapper.selectCount(query) < 0) {
+        if (collectionMapper.selectCount(query) <= 0) {
             throw new NotFoundException("该收藏夹中不存在该记录");
         }
         collectionMapper.delete(query);
         return ResultVO.newSuccessResult("取消收藏成功");
+    }
+
+    public Wrapper<Favourite> checkFavouriteByFavouriteID(Integer favouriteId) throws NotFoundException {
+        Wrapper<Favourite> favouriteQuery = new QueryWrapper<Favourite>().lambda()
+                .eq(Favourite::getId, favouriteId);
+        if (favouriteMapper.selectCount(favouriteQuery) <= 0) {
+            throw new NotFoundException("收藏夹不存在，请先创建收藏夹");
+        }
+        return favouriteQuery;
+    }
+    public Wrapper<Favourite> checkFavouriteByUserIDAndFavouriteName(Integer userId, String favouriteName) throws NotFoundException {
+        Wrapper<Favourite> favouriteQuery = new QueryWrapper<Favourite>().lambda()
+                .eq(Favourite::getUserId, userId)
+                .eq(Favourite::getFavouriteName, favouriteName);
+        if (favouriteMapper.selectCount(favouriteQuery) <= 0) {
+            throw new NotFoundException("收藏夹不存在");
+        }
+        return favouriteQuery;
     }
 }
