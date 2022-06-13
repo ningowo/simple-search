@@ -97,7 +97,7 @@ public class CollectController {
     }
 
     @PostMapping("/article/delete")
-    public ResultVO deleteDataFromFavourite(Integer favouriteId, Integer dataId) {
+    public ResultVO deleteDataFromFavourite(Integer favouriteId, String dataId) {
         if (favouriteId == null) return ResultVO.newParamErrorResult("请选中收藏夹后操作");
         if (dataId == null) return ResultVO.newParamErrorResult("目标文档不得为空");
         ResultVO resultVO = new ResultVO();

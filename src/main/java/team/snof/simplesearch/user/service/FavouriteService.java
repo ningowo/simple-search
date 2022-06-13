@@ -20,6 +20,9 @@ import team.snof.simplesearch.user.model.bo.favorite.Dataset;
 import team.snof.simplesearch.user.model.bo.favorite.Favourite;
 
 import javax.management.InstanceAlreadyExistsException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpSession;
+import java.net.http.HttpRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -120,7 +123,7 @@ public class FavouriteService {
     }
 
     //取消文章收藏
-    public ResultVO deleteDataFromFavourite(Integer favouriteId, Integer dataId) throws NotFoundException {
+    public ResultVO deleteDataFromFavourite(Integer favouriteId, String dataId) throws NotFoundException {
         checkFavouriteByFavouriteID(favouriteId);
         Wrapper<Collection> query = new QueryWrapper<Collection>().lambda()
                 .eq(Collection::getFavouriteId, favouriteId)

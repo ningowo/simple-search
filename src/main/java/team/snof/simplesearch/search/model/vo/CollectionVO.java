@@ -27,9 +27,9 @@ public class CollectionVO {
     private Integer favouriteId;
 
     @ApiModelProperty
-    private Integer dataId;
+    private String dataId;
 
-    public CollectionVO(Integer favouriteId, Integer dataId) {
+    public CollectionVO(Integer favouriteId, String dataId) {
         this.favouriteId = favouriteId;
         this.dataId = dataId;
     }
