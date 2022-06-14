@@ -1,4 +1,6 @@
-export const API_BASE_URL = 'http://localhost:5900';
+export const API_BASE_URL = 'http://47.104.4.41:5900';
+// export const API_BASE_URL = 'http://localhost:5900';
+
 
 export const ACCESS_TOKEN = 'accessToken';
 

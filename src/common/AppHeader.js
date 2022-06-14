@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { Link, withRouter } from "react-router-dom";
 import "./AppHeader.css";
 import "antd/dist/antd.css";
-import { Layout, Menu, Dropdown, Icon, Input, Button } from "antd";
+import { Layout, Menu, Dropdown, Icon } from "antd";
 const Header = Layout.Header;
 class AppHeader extends Component {
   constructor(props) {
@@ -17,7 +17,7 @@ class AppHeader extends Component {
     if (key === "collect") {
       console.log("collect");
       this.setState({
-        userKey:"/collect"
+        userKey: "/collect",
       });
     }
     if (key === "logout") {
@@ -29,12 +29,12 @@ class AppHeader extends Component {
     let menuItems;
     if (this.props.currentUser) {
       menuItems = [
-        <Menu.Item key="/accessHome">
+        <Menu.Item key="/">
           <Link to={`/accessHome/${this.props.currentUser.username}`}>
             <Icon type="home" className="nav-icon" />
           </Link>
         </Menu.Item>,
-        <Menu.Item key={this.userKey} className="profile-menu">
+        <Menu.Item key="/profile" className="profile-menu">
           <ProfileDropdownMenu
             currentUser={this.props.currentUser}
             handleMenuClick={this.handleMenuClick}
@@ -51,24 +51,22 @@ class AppHeader extends Component {
         </Menu.Item>,
       ];
     }
-    const onSearch = () => {
-      console.log("search");
-    };
+
     return (
       <Header className="app-header">
         <div className="app-title">
-          <Link to="/">Search App</Link>
-        </div>
-
-        <div className="search-content">
-          <Input.Group compact className="header-search">
-            <Input style={{ width: "calc(60%)" }} defaultValue="search" />
-            <Link to="/search">
-              <Button type="primary" onClick={onSearch}>
-                搜索
-              </Button>
+          {!this.props.currentUser ? (
+            <Link to="/">Search App</Link>
+          ) : (
+            <Link
+              to={{
+                pathname: "/",
+                state: { userId: this.props.currentUser.id },
+              }}
+            >
+              Search App
             </Link>
-          </Input.Group>
+          )}
         </div>
         <div className="app-menu">
           <Menu
@@ -87,24 +85,24 @@ class AppHeader extends Component {
 }
 
 function ProfileDropdownMenu(props) {
-    const dropdownMenu = (
-      <Menu onClick={props.handleMenuClick} className="profile-dropdown-menu">
-        <Menu.Item key="user-info" className="dropdown-item" disabled>
-          <div className="user-full-name-info">{props.currentUser.name}</div>
-          <div className="username-info">@{props.currentUser.username}</div>
-        </Menu.Item>
-        <Menu.Divider />
-        <Menu.Item key="profile" className="dropdown-item">
-          <Link to={`/users/${props.currentUser.username}`}>Profile</Link>
-        </Menu.Item>
-        <Menu.Item key="collect" className="dropdown-item">
-          <Link to="/collect">Collect</Link>
-        </Menu.Item>
-        <Menu.Item key="logout" className="dropdown-item">
-          Logout
-        </Menu.Item>
-      </Menu>
-    );
+  const dropdownMenu = (
+    <Menu onClick={props.handleMenuClick} className="profile-dropdown-menu">
+      <Menu.Item key="user-info" className="dropdown-item" disabled>
+        <div className="user-full-name-info">{props.currentUser.name}</div>
+        <div className="username-info">@{props.currentUser.username}</div>
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="profile" className="dropdown-item">
+        <Link to={`/users/${props.currentUser.username}`}>Profile</Link>
+      </Menu.Item>
+      <Menu.Item key="collect" className="dropdown-item">
+        <Link to="/collect">Collect</Link>
+      </Menu.Item>
+      <Menu.Item key="logout" className="dropdown-item">
+        Logout
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
     <Dropdown

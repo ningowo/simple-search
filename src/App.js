@@ -6,7 +6,7 @@ import Home from "./home";
 import Search from "./Search";
 import Signup from "./user/signup/Signup";
 import Profile from "./user/profile/Profile";
-import Collect from "./user/collect/Collect";
+import Collect from "./components/Collect";
 import AppHeader from "./common/AppHeader";
 import AppFooter from "./common/AppFooter";
 import { ACCESS_TOKEN } from "./constants";
@@ -73,14 +73,14 @@ class App extends Component {
     this.props.history.push(redirectTo);
 
     notification[notificationType]({
-      message: "Login App",
+      message: "Search App",
       description: description,
     });
   }
 
   handleLogin() {
     notification.success({
-      message: "Login App",
+      message: "Search App",
       description: "You're successfully logged in.",
     });
     this.loadCurrentUser();
@@ -114,7 +114,12 @@ class App extends Component {
                 )}
               ></Route>
               <Route path="/signup" component={Signup}></Route>
-              <Route path="/collect" component={Collect}></Route>
+              <Route
+                path="/collect"
+                render={(props) => (
+                  <Collect id={this.state.currentUser.id} {...props} />
+                )}
+              ></Route>
               <Route path="/search" component={Search}></Route>
               <Route
                 path="/users/:username"

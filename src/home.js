@@ -2,10 +2,30 @@ import React, { Component } from "react";
 import { Input } from "antd";
 import { Link, withRouter } from "react-router-dom";
 import "./index.css";
+
 class Home extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      query: '',
+      userId:'',
+    };
+    this.onSearch = this.onSearch.bind(this);
+  }
   onSearch = (event) => {
-    console.log("event");
-  };
+    const { value: inputValue } = event.target;
+    this.setState({
+      query:inputValue
+    });
+  }
+  componentDidMount() {
+    console.log("home",this.props)
+    if(this.props.location.state){
+      this.setState({
+        userId:this.props.location.state.userId
+      });
+    }
+  }
   render() {
     return (
       <div className="App-content">
@@ -19,9 +39,9 @@ class Home extends Component {
           </div>
           <div className="search">
             <div className="searchbar">
-              <Input type="text" className="searchMsg" />
-              <Link to="/search">
-                <span className="btn" onClick={this.props.onSearch}>
+              <Input type="text" className="searchMsg" onChange={this.onSearch}/>
+              <Link to={{pathname: '/search', state: {query: this.state.query,userId:this.state.userId}}}>
+                <span className="btn">
                   搜索关键词
                 </span>
               </Link>

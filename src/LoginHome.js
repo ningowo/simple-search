@@ -4,12 +4,16 @@ import LoadingIndicator from "./common/LoadingIndicator";
 import NotFound from "./common/NotFound";
 import ServerError from "./common/ServerError";
 import CheckAuthentication from "./common/CheckAuthentication";
+import Collect from "./components/Collect";
+
 class LoginHome extends Component {
   constructor(props) {
     super(props);
     this.state = {
       user: null,
       isLoading: false,
+      id:null,
+      data:null,
     };
   }
   onSearch = () => {
@@ -24,8 +28,10 @@ class LoginHome extends Component {
 
       getUserProfile(username)
         .then((response) => {
+          console.log(response)
           _this.setState({
             user: response,
+            id:response.id,
             isLoading: false,
           });
         })
@@ -43,6 +49,7 @@ class LoginHome extends Component {
           }
         });
     }
+  
   };
 
   componentDidMount() {
@@ -71,12 +78,12 @@ class LoginHome extends Component {
     if (!this.props.isAuthenticated) {
       return <CheckAuthentication {...this.props} />;
     }
-
+    console.log("log this.props.match.params",this.props.match.params)
     return (
-      <div className="App-content">
+      <div>
         {this.state.user ? <div>
-          hello
-          login access home</div>
+          <Collect id={this.state.id}/>
+          </div>
            : null}
       </div>
     );
