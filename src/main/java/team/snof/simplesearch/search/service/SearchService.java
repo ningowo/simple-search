@@ -1,5 +1,6 @@
 package team.snof.simplesearch.search.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -7,9 +8,8 @@ import team.snof.simplesearch.common.util.RedisUtils;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.adaptor.SearchAdaptor;
 import team.snof.simplesearch.search.engine.Engine;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
-import team.snof.simplesearch.search.model.dao.index.DocInfo;
-import team.snof.simplesearch.search.model.dao.index.Index;
+import team.snof.simplesearch.search.model.dao.InvertedIndex;
+import team.snof.simplesearch.search.model.dao.Doc;
 import team.snof.simplesearch.search.model.vo.DocVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 import team.snof.simplesearch.search.model.vo.SearchResponseVO;
@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class SearchService {
 
@@ -25,9 +26,6 @@ public class SearchService {
 
     // 默认缓存过期时间，单位：秒
     private static final Integer DEFAULT_CACHE_EXPIRE_TIME = 60 * 10;
-
-    // 计算相关搜索的最大文档解析量
-    public static final Integer MAX_DOC_NUM_FOR_RELATED_SEARCH = 20;
 
     @Autowired
     Engine engine;
@@ -57,6 +55,7 @@ public class SearchService {
         }
 
         // 分词
+        log.info("开始分词：");
         HashMap<String, Integer> wordToFreqMap = wordSegmentation.segment(query, filterWordList);
         // 如果query中有过滤词，在这一步直接过滤掉
         for (String word : wordToFreqMap.keySet()) {
@@ -64,43 +63,22 @@ public class SearchService {
                 wordToFreqMap.remove(word);
             }
         }
+        log.info("分词完成：{}", wordToFreqMap.keySet());
 
-        // TODO 如果能找个办法把query和过滤词合并成一个搜索条件，那么以此建立缓存key，就能比较简单的缓存结果。现在因为相关搜索需要获取doc,
-        //  过滤之后还要获取doc，这两个重复度有点高
-        //  （这里缓存是为了分页使用的，因为有相同条件重复查询）
-
-        // 获取排好序的文档id
-        String queryToDocIdsCacheKey = "search:page:" + query + ":list";
-        List<String> sortedAllDocIds = searchEngineOrCacheForDocIds(queryToDocIdsCacheKey, wordToFreqMap);
-        if (sortedAllDocIds.isEmpty()) {
-            return getEmptyResponseVO(request);
-        }
-
-        Map<String, Doc> docMap = new HashMap<>();
-        // 1. 尝试获取相关搜索
-        String queryToRelatedSearchKey = "search:related:" + query + ":list";
-        List<String> relatedSearch = redisUtils.lGetAll(queryToRelatedSearchKey);
-
-        // 2. 如果redis里不存在或者过期了，查询全部doc计算相关搜索，并更新缓存
-        if (relatedSearch.isEmpty()) {
-            // 查询doc
-            int end = Math.min(MAX_DOC_NUM_FOR_RELATED_SEARCH, sortedAllDocIds.size());
-            List<String> lessDocIdsForRelatedSearch = sortedAllDocIds.subList(0, end);
-            List<Doc> lessDocs = engine.batchFindDocs(lessDocIdsForRelatedSearch);
-            lessDocs.forEach(doc -> docMap.put(doc.getId(), doc));
-
-            // 更新缓存（只根据query生成的相关搜索）
-            relatedSearch = engine.findRelatedSearch(lessDocs, wordToFreqMap);
-            redisUtils.lSetAll(queryToRelatedSearchKey, relatedSearch, DEFAULT_CACHE_EXPIRE_TIME);
-        }
+        // 对分词获取文档，并排序
+        List<String> sortedDocIds = engine.findSortedDocIds(wordToFreqMap);
+        log.info("docId获取并排序完成：" + sortedDocIds.size());
 
         // 过滤
-        Set<String> filterDocIds = findDocIdsByWord(filterWordList);
-        List<String> filteredAndSortedDocIds = filterDocIdsByIds(sortedAllDocIds, filterDocIds);
-        int totalDocNum = filteredAndSortedDocIds.size();
+        sortedDocIds = filterDocIdsByIds(sortedDocIds, filterWordList);
+        int totalDocNum = sortedDocIds.size();
         if (totalDocNum == 0) {
-            return getEmptyResponseVO(request);
+            return SearchAdaptor.getEmptyResponseVO(request);
         }
+        log.info("docId过滤完成：" + sortedDocIds.size());
+
+        // 获取相关搜索
+        List<String> relatedSearch = null;
 
         // 设置总文档数为过滤完毕的文档数
         request.setTotal((long) totalDocNum);
@@ -110,46 +88,15 @@ public class SearchService {
         if (start >= totalDocNum) {
             throw new IllegalArgumentException("所查询的记录超出范围!");
         }
-        int end = Math.min(pageNum * pageSize, totalDocNum);
-        List<String> pageDocIds = filteredAndSortedDocIds.subList(start, end);
+        int end = (int) Math.min((long) pageNum * pageSize, totalDocNum);
+        List<String> pageDocIds = sortedDocIds.subList(start, end);
+        log.info("分页完成：" + pageDocIds);
 
         // 查询文档
-        List<Doc> resDocs = new ArrayList<>();
-        for (String docId : pageDocIds) {
-            if (docMap.containsKey(docId)) {
-                resDocs.add(docMap.get(docId));
-            } else {
-                resDocs.add(engine.findDoc(docId));
-            }
-        }
+        List<Doc> docs = engine.batchFindDocs(pageDocIds);
+        log.info("文档查询完成：" + docs);
 
-        return convertAndBuildResponse(resDocs, relatedSearch, request);
-    }
-
-    private List<String> searchEngineOrCacheForDocIds(String queryToDocIdsCacheKey, HashMap<String, Integer> wordToFreqMap) {
-        // 这里先全部查出来，在业务侧做筛选。不然担心有一开始hasKey是true，get时缓存过期的情况。
-        // 之后再优化。
-        List<String> sortedDocIds = redisUtils.lGetAll(queryToDocIdsCacheKey);
-
-        // 如果缓存里有
-        if (!sortedDocIds.isEmpty()) {
-            return sortedDocIds;
-        } else {
-            // 如果redis里不存在或者过期了，查询并更新缓存
-            // 查询
-            sortedDocIds = engine.findSortedDocIds(wordToFreqMap);
-
-            // 如果引擎也查不到，返回空list
-            if (sortedDocIds.isEmpty()) {
-                return Collections.emptyList();
-            }
-
-            // 更新
-            // 这里往缓存里放的搜索排好序的文档，和引擎层的缓存作用不同
-            redisUtils.lSetAll(queryToDocIdsCacheKey, sortedDocIds, DEFAULT_CACHE_EXPIRE_TIME);
-
-            return sortedDocIds;
-        }
+        return convertAndBuildResponse(docs, relatedSearch, request);
     }
 
     private SearchResponseVO convertAndBuildResponse(List<Doc> docList, List<String> relatedSearchList, SearchRequestVO request) {
@@ -163,26 +110,14 @@ public class SearchService {
                 .build();
     }
 
-    private Set<String> findDocIdsByWord(List<String> words) {
-        if (words.size() == 0) {
-            return Collections.emptySet();
-        }
+    private List<String> filterDocIdsByIds(List<String> docIds, List<String> filterWordList) {
+        List<InvertedIndex> invertedIndexList = engine.findInvertedIndexList(filterWordList);
 
-        // 获取过滤词对应索引
-        List<Index> indices = engine.batchFindIndexes(words);
-        // 从索引获取所有要过滤的docids
-        Set<String> filterDocIds = new HashSet<>();
-        for (Index index : indices) {
-            List<DocInfo> docIdAndCorrList = index.getDocInfoList();
-            for (DocInfo docInfo : docIdAndCorrList) {
-                filterDocIds.add(docInfo.getDocId());
-            }
-        }
+        Set<String> idsToFilter = invertedIndexList.stream()
+                .map(InvertedIndex::getDocIds)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
 
-        return filterDocIds;
-    }
-
-    private List<String> filterDocIdsByIds(List<String> docIds, Set<String> idsToFilter) {
         if (idsToFilter.isEmpty()) {
             return docIds;
         }
@@ -190,15 +125,6 @@ public class SearchService {
         return docIds.stream()
                 .filter(id -> !idsToFilter.contains(id))
                 .collect(Collectors.toList());
-    }
-
-    private SearchResponseVO getEmptyResponseVO(SearchRequestVO request) {
-        request.setTotal(0L);
-        return SearchResponseVO.builder()
-                .docVOList(Collections.emptyList())
-                .relatedSearchList(Collections.emptyList())
-                .query(request)
-                .build();
     }
 
 }

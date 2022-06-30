@@ -43,16 +43,10 @@ public class SearchController {
 
         assert searchResult != null;
         log.info("查询完毕：" + request +
-                "\n结果长度为：" + searchResult.getDocVOList().size() +
-                "\n相关搜索为: " + searchResult.getRelatedSearchList());
+                "，结果长度为：" + searchResult.getDocVOList().size() +
+                "，相关搜索为: " + searchResult.getRelatedSearchList());
 
         return ResultVO.newSuccessResult(searchResult);
-    }
-
-    @RequestMapping(value = "/search/test", method = RequestMethod.GET)
-    @ApiOperation("测试接口")
-    public ResultVO<String> test() {
-        return ResultVO.newSuccessResult("测试接口ok: ");
     }
 
 }

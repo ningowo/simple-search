@@ -4,31 +4,27 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
-import team.snof.simplesearch.search.model.bo.Doc4Sort;
-import team.snof.simplesearch.search.model.dao.index.DocInfo;
-import team.snof.simplesearch.search.model.dao.index.Index;
-import team.snof.simplesearch.search.model.dao.index.IndexPartial;
-import team.snof.simplesearch.search.storage.DocLenStorage;
-import team.snof.simplesearch.search.storage.IndexPartialStorage;
+import team.snof.simplesearch.search.model.dao.ForwardIndex;
+import team.snof.simplesearch.search.model.dao.WordFreq;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 public  class SortLogic {
 
     @Autowired
-    DocLenStorage docLenStorage;
-
-    @Autowired
-    IndexPartialStorage indexPartialStorage;
-
-    @Autowired
     WordSegmentation wordSegmentation;
+
+    // BM25算法常量定义
+    // k1可取1.2--2
+    private final double BM25_K1 = 1.5;
+    // b取0.75
+    private final double BM25_B = 0.75;
+    // k3可取1.2~2
+    private static final double BM25_K3 = 1.5;
 
     // 最多需要获取的相关搜索条数
     private static final int MAX_NUM_RELATED_SEARCH_TO_FIND = 8;
@@ -36,138 +32,74 @@ public  class SortLogic {
     // 最多进行相关搜索检索的文档
     private static final int MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH = 6;
 
-    // BM25参数 k3  1.2~2
-    private static final double k_3 = 1.5;
-
     /**
-     * 文档排序逻辑
-     * @param indexs
-     * @param wordToFreqMap
-     * @return 已排序文档ids
+     * 计算单个分词对应的所有doc，与这个分词的关联度
      */
-    public List<String> docSort(List<Index> indexs, Map<String, Integer> wordToFreqMap) {
-        //1.计算文档对应的相似度
-        HashMap<String, BigDecimal> docId2Similarity = new HashMap<>();
-        for (Index index : indexs) {
-            String word = index.getIndexKey();
-            for (DocInfo doc : index.getDocInfoList()) {
-                BigDecimal corr = doc.getCorr().multiply(new BigDecimal((k_3 + 1) * wordToFreqMap.get(word)))
-                        .divide(new BigDecimal(k_3 + wordToFreqMap.get(word)), 3, RoundingMode.HALF_EVEN);
-                docId2Similarity.put(doc.getDocId(), docId2Similarity.getOrDefault(doc.getDocId(), new BigDecimal(0)).add(corr));
-            }
+    public Map<String, Double> calcSingleWordCorr(String word, List<ForwardIndex> forwardIndices, long totalDocNum, double docAvgLen, Map<String, Integer> wordToFreqMap) {
+        // key-docId, v-corr
+        Map<String, Double> docCorrMap = new HashMap<>();
+
+        // 计算文档对应的相似度
+        // 1. 分词权重
+        long allDocsWordFreq = forwardIndices.size();
+        double wordWeight = Math.log((totalDocNum - allDocsWordFreq + 0.5) / (allDocsWordFreq + 0.5));
+
+        for (ForwardIndex forwardIndex : forwardIndices) {
+            // 2. 分词文档关联度
+            long docLen = forwardIndex.getDocLength();
+            int wordInDocFreq = forwardIndex.getWordFreqList().stream()
+                    .filter(wordFreq1 -> wordFreq1.getWord().equals(word))
+                    .findAny()
+                    .map(WordFreq::getFreq).get();
+
+            double wordDocCorr = wordInDocFreq * (BM25_K1 + 1) / ((BM25_K1 * (1 - BM25_B)) + BM25_B * docLen / docAvgLen + wordInDocFreq);
+
+            // 3. 分词query关联度
+            long wordInQueryFreq = wordToFreqMap.get(word);
+            double wordQueryCorr = ((BM25_K3 + 1) * wordInQueryFreq) / (BM25_K3 + wordInQueryFreq);
+
+            double totalCorr = wordWeight * wordDocCorr * wordQueryCorr;
+            docCorrMap.put(forwardIndex.getDocId(), totalCorr);
         }
 
-        //2.按相似度从高到低排序
-        Doc4Sort[] docs = new Doc4Sort[docId2Similarity.size()];
-        int idx = 0;
-        for(Map.Entry<String,BigDecimal> entry:docId2Similarity.entrySet()){
-            docs[idx++] = new Doc4Sort(entry.getKey(),entry.getValue());
-        }
-        List<String> orderedDocIds = new ArrayList<>();
-        Arrays.sort(docs,Collections.reverseOrder());  // 内部改写了compareTo方法 未加@Override
-
-        for(Doc4Sort doc:docs){
-            orderedDocIds.add(doc.getDocId());
-        }
-        return orderedDocIds;
+        return docCorrMap;
     }
 
     /**
-     * 相关搜索排序逻辑，返回的list中不包含空值或重复词
-     * @param docs
-     * @param wordToFreqMap
-     * @return
+     * 汇总每个doc的最终关联度
      */
-    public List<String> wordSort(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
-        log.info("开始构建相关搜索: " + "分词数量: " + wordToFreqMap.size() + ", 提供文档数量: " + docs.size());
+    public List<String> sortAllDocs(List<Map<String, Double>> allDocCorrMapList) {
+        // key-docId, value-汇总corr
+        Map<String, Double> allDocCorrMap = new HashMap<>();
 
-        Set<String> relatedSearch = new HashSet<>();
-        List<String> wordsToFindRelatedSearch = new ArrayList<>(wordToFreqMap.keySet());
+        // 直接把所有
+        for (Map<String, Double> docCorrMap : allDocCorrMapList) {
+            for (Map.Entry<String, Double> docCorr : docCorrMap.entrySet()) {
+                String docId = docCorr.getKey();
+                double curCorr = docCorr.getValue();
 
-        // 若分词个数为1 则取一个关键词（即该分词本身）
-        long docTotalNum = docLenStorage.getDocTotalNum();
-        if (wordToFreqMap.size() == 1) {
-            String keyWord = wordsToFindRelatedSearch.get(0);
-
-            // 取docs中文档进行解析  获取关键词和其后一个位置的词语 拼接称为相关搜索词语
-            int maxNum = Math.min(MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH, docs.size());
-            List<Doc> docsToParse = docs.subList(0, maxNum);
-            for (Doc doc : docsToParse) {
-                // 对单个文档和要解析的单个分词进行解析
-                String relatedWord = calRelatedSearch(doc.getCaption(), keyWord);
-                if (!relatedWord.equals(keyWord) && !relatedWord.isBlank()) {
-                    relatedSearch.add(relatedWord);
-                }
-                if (relatedSearch.size() > 8) {
-                    break;
-                }
-            }
-        } else {
-            // 若分词个数大于1
-            String keyWord_1;
-            String keyWord_2;
-
-            // 1. 分词数量为2：不用重新选择关键词
-            if (wordsToFindRelatedSearch.size() == 2) {
-                keyWord_1 = wordsToFindRelatedSearch.get(0);
-                keyWord_2 = wordsToFindRelatedSearch.get(1);
-            } else {
-                // 2. 分词数量大于2：计算所有分词idf权重，选择最大的两个作为关键词
-                HashMap<String, BigDecimal> wordToIDFMap = new HashMap<>();
-
-                // 计算idf权重
-                for (String word : wordsToFindRelatedSearch) {
-                    BigDecimal wordIDF = calWordIDF(word, docTotalNum);
-                    wordToIDFMap.put(word, wordIDF);
-                }
-
-                // 选择idf权重最大的两个分词
-                // todo 后面可以写个算法实现一下
-                List<Map.Entry<String, BigDecimal>> wordToIDFList = new ArrayList<>(wordToIDFMap.entrySet());
-                wordToIDFList.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
-                keyWord_1 = wordToIDFList.get(0).getKey();
-                keyWord_2 = wordToIDFList.get(1).getKey();
-            }
-
-            // 取docs中文档进行解析，获取关键词和其后一个位置的词语，拼接称为相关搜索词语
-            int maxNum = Math.min(MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH, docs.size());
-            List<Doc> docsToParse = docs.subList(0, maxNum);
-            for (Doc doc : docsToParse) {
-                // 对单个文档和要解析的单个分词进行解析
-                String relatedWord = calRelatedSearch(doc.getCaption(), keyWord_1, keyWord_2);
-                if (!relatedWord.equals(keyWord_1) && !relatedWord.equals(keyWord_2)) {
-                    relatedSearch.add(relatedWord);
-                }
-                if (relatedSearch.size() > 8) {
-                    break;
+                Double oldCorr = allDocCorrMap.putIfAbsent(docId, curCorr);
+                if (oldCorr != null) {
+                    allDocCorrMap.put(docId, oldCorr + curCorr);
                 }
             }
         }
 
-        log.info("构建相关搜索完成! " + "相关搜索: " + relatedSearch);
-
-        return new ArrayList<>(relatedSearch);
-    }
-
-    /**
-     *  计算单个分词的IDF  （未考虑单词与query关联度）
-     */
-    public BigDecimal calWordIDF(String word, long docTotalNum) {
-        // 包含分词的文档数目
-        IndexPartial indexPartial = indexPartialStorage.getIndexPartial(word);
-        if (indexPartial == null) {
-            return new BigDecimal(0);
-        }
-        long wordDocNum = indexPartial.getTempDataList().size();
-        BigDecimal wordIDF = BigDecimal.valueOf(Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5)));
-        return wordIDF;
+        // 从大到小排序
+        return allDocCorrMap.entrySet().stream()
+                .sorted((o1, o2) -> {
+                    if (o1.getValue() - o2.getValue() > 0.00001) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                })
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     /**
      * 对单个分词计算相关搜索
-     * @param caption
-     * @param keyWord
-     * @return
      */
     public String calRelatedSearch(String caption, String keyWord) {
         // 对文档分词

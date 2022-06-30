@@ -4,30 +4,33 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
-import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
-import team.snof.simplesearch.search.model.dao.index.Index;
-import team.snof.simplesearch.search.storage.IndexStorage;
+import team.snof.simplesearch.search.model.dao.ForwardIndex;
+import team.snof.simplesearch.search.model.dao.Doc;
+import team.snof.simplesearch.search.model.dao.InvertedIndex;
 import team.snof.simplesearch.search.storage.DocStorage;
+import team.snof.simplesearch.search.storage.ForwardIndexStorage;
+import team.snof.simplesearch.search.storage.InvertedIndexStorage;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 public class EngineImpl implements Engine {
 
     @Autowired
-    IndexStorage indexStorage;
+    ForwardIndexStorage forwardIndexStorage;
+
+    @Autowired
+    InvertedIndexStorage invertedIndexStorage;
+
+    @Autowired
+    DocStorage docStorage;
 
     @Autowired
     RedisTemplate redisTemplate;
 
     @Autowired
     SortLogic sortLogic;
-
-    @Autowired
-    DocStorage docStorage;
 
     //索引redis格式串
     private final String indexRedisFormat = "engine:index:%s:string";
@@ -36,33 +39,77 @@ public class EngineImpl implements Engine {
     private final int expireDuration = 10;
 
     /**
-     * 获取索引并据此排序文档
-     * @param wordToFreqMap
-     * @return
+     * 根据query查找索引并排序文档
      */
     public List<String> findSortedDocIds(Map<String, Integer> wordToFreqMap) {
-        // 获取索引
-        List<String> words = new ArrayList<>(wordToFreqMap.keySet());
-        List<Index> indexs = batchFindIndexes(words);
+        // 1. 获取所有文档统计数据
+        // todo 这里long可能不太准确
+        long docAvgLen = forwardIndexStorage.getDocAvgLen();
+        log.info("[findSortedDocIds] 文档平均长度获取完成：{}", docAvgLen);
 
-        // 文档排序
-        return sortLogic.docSort(indexs,wordToFreqMap);
+        long totalDocNum = forwardIndexStorage.getTotalDocNum();
+        log.info("[findSortedDocIds] 文档总数获取完成：{}", totalDocNum);
+
+        // 计算单个分词关联度
+        List<String> wordList = new ArrayList<>(wordToFreqMap.keySet());
+        List<Map<String, Double>> wordToDocCorrMap = new ArrayList<>(wordList.size());
+        for (String word : wordList) {
+            // 2. 获取倒排索引，文档召回（全部出现分词的文档）
+            InvertedIndex invertedIndex = invertedIndexStorage.find(word);
+            if (invertedIndex == null) {
+                continue;
+            }
+            List<String> docIdList = invertedIndex.getDocIds();
+            // todo 这里花时间第二多
+            log.info("[findSortedDocIds] docid召回完成。分词：{} docId数量：{}", invertedIndex.getWord(), invertedIndex.getDocIds().size());
+
+            // 3. 获取正排索引（docId对应的文档具体信息，用于计算关联度）
+            List<ForwardIndex> forwardIndices = forwardIndexStorage.batchFind(docIdList);
+            if (forwardIndices.isEmpty()) {
+                continue;
+            }
+            // todo 这里花时间很多
+            log.info("[findSortedDocIds] forwardIndices获取完成：{}", forwardIndices.size());
+
+            Map<String, Double> docToCorrMap = sortLogic.calcSingleWordCorr(word, forwardIndices, totalDocNum, docAvgLen, wordToFreqMap);
+            wordToDocCorrMap.add(docToCorrMap);
+        }
+
+        log.info("[findSortedDocIds] 关联度计算完成，分词数量：文档数量：{}", wordToDocCorrMap);
+
+        // 排序
+        return sortLogic.sortAllDocs(wordToDocCorrMap);
     }
 
     /**
      * 获取相关搜索结果
-     * @param docs
-     * @param wordToFreqMap
-     * @return
      */
-    public List<String> findRelatedSearch(List<Doc> docs, Map<String, Integer> wordToFreqMap) {
-        return sortLogic.wordSort(docs, wordToFreqMap);
+    public List<String> findRelatedSearch(Map<String, Integer> wordToFreqMap) {
+        return null;
+    }
+
+    /**
+     * 获取正排索引
+     */
+    public List<ForwardIndex> findForwardIndex(String word){
+        // 召回所有包含分词的docId
+        InvertedIndex index = invertedIndexStorage.find(word);
+        if (index == null) {
+            return Collections.emptyList();
+        }
+        List<String> docIdList = index.getDocIds();
+
+        // 获取正排索引
+        return forwardIndexStorage.batchFind(docIdList);
+    }
+
+    @Override
+    public List<InvertedIndex> findInvertedIndexList(List<String> wordList) {
+        return invertedIndexStorage.batchFind(wordList);
     }
 
     /**
      * 查询单个文档
-     * @param docId
-     * @return
      */
     public Doc findDoc(String docId){
         return docStorage.getDocById(docId);
@@ -70,8 +117,6 @@ public class EngineImpl implements Engine {
 
     /**
      * 批量查询文档
-     * @param docIds
-     * @return
      */
     public List<Doc> batchFindDocs(List<String> docIds){// 常用
         log.info("开始批量获取文档，请求文档数量为: " + docIds.size());
@@ -83,102 +128,4 @@ public class EngineImpl implements Engine {
         return docs;
     }
 
-    /**
-     * 获取单个索引
-     * @param word
-     * @return
-     */
-    public Index findIndex(String word){
-        //redis查询
-        String wordRedisKey = String.format(indexRedisFormat,word);
-        Index index = (Index)redisTemplate.opsForValue().get(wordRedisKey);
-
-        //判断是否有缓存
-        if (index == null) {
-            index = indexStorage.findByKey(word).get(0);
-            redisTemplate.opsForValue().set(wordRedisKey, index);
-            redisTemplate.expire(wordRedisKey, expireDuration, TimeUnit.MINUTES);
-        }
-        return index;
-    }
-
-    /**
-     * 批量获取索引，只返回非空索引
-     * @param words
-     * @return
-     */
-    public List<Index> batchFindIndexes(List<String> words) {
-        if (words.isEmpty()) {
-            return Collections.emptyList();
-        }
-        log.info("开始批量获取索引: " + words);
-
-        //redis查询
-        // 构建Redis查询keys
-        List<String> wordRedisKeys = new ArrayList<>(words.size());
-        for(int i = 0; i < words.size(); ++i){
-            wordRedisKeys.add(i, String.format(indexRedisFormat,words.get(i)));
-        }
-        List<Index> indexs = redisTemplate.opsForValue().multiGet(wordRedisKeys);
-
-        //判断是否有缓存
-        for(int i = 0; i < indexs.size(); ++i) {
-            if(indexs.get(i) == null){
-                // 查数据库
-                List<Index> index = indexStorage.findByKey(words.get(i));
-                if (index.isEmpty()) {
-                    continue;
-                }
-
-                indexs.set(i, index.get(0));
-                redisTemplate.opsForValue().set(wordRedisKeys.get(i), indexs.get(i));
-                redisTemplate.expire(wordRedisKeys.get(i), expireDuration, TimeUnit.MINUTES);
-            }
-        }
-        indexs.removeIf(Objects::isNull);
-
-        log.info("批量获取索引完成! 分词: " + words + ", 索引数量: " + indexs.size());
-
-        return indexs;
-    }
-
-    /**
-     * 返回指定范围文档结果
-     */
-    public ComplexEngineResult rangeFind(Map<String, Integer> wordToFreqMap, int offset, int limit) {
-        // 获取分词
-        List<String> words = new ArrayList<>(wordToFreqMap.keySet());
-
-        List<Index> indexs = batchFindIndexes(words);
-        List<String> docIds = sortLogic.docSort(indexs,wordToFreqMap);
-        List<String> partialDocIds = new ArrayList<>();
-        for(int i = offset; i < docIds.size() && i < offset + limit; ++i){//避免越界
-            partialDocIds.add(docIds.get(i));
-        }
-        List<Doc> docs = batchFindDocs(partialDocIds);
-        List<String> relatedSearches = sortLogic.wordSort(docs, wordToFreqMap);
-        return new ComplexEngineResult(docs,docIds, relatedSearches);
-    }
-
-    /**
-     * 返回全部文档完整结果
-     * @param wordToFreqMap
-     * @return
-     */
-    public ComplexEngineResult find(Map<String, Integer> wordToFreqMap){
-        // 获取索引
-        List<String> words = new ArrayList<>(wordToFreqMap.keySet());
-        List<Index> indexs = batchFindIndexes(words);
-
-        // 文档排序
-        List<String> docIds = sortLogic.docSort(indexs,wordToFreqMap);
-
-        // 获取文档
-        List<Doc> docs = batchFindDocs(docIds);
-
-        // 计算相关搜索结果
-        List<String> relatedSearches = sortLogic.wordSort(docs, wordToFreqMap);
-
-        return new ComplexEngineResult(docs, docIds, relatedSearches);
-    }
 }
