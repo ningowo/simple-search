@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.model.dao.doc;
+package team.snof.simplesearch.search.model.dao;
 
 
 import lombok.AllArgsConstructor;

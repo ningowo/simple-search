@@ -1,4 +1,4 @@
-package team.snof.simplesearch.search.model.dao.index;
+package team.snof.simplesearch.search.model.dao;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,14 +8,19 @@ import org.springframework.data.annotation.Id;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * 倒排索引
+ */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Index implements Serializable {
+public class InvertedIndex implements Serializable {
 
     // 分词
-    public String indexKey;
+    @Id
+    private String word;
 
-    public List<DocInfo> docInfoList;
+    private List<String> docIds;
 
 }

@@ -14,7 +14,7 @@ public class WordSegmentation {
     public HashMap<String, Integer> segment(String msg, List<String> filterWords) throws IOException {
         StringReader sr = new StringReader(msg);
         IKSegmenter ik = new IKSegmenter(sr, true);
-        Lexeme lex = null;
+        Lexeme lex;
         Set<String> filterSet = new HashSet<>(filterWords);
         HashMap<String, Integer> map = new HashMap<>();
         while((lex=ik.next())!=null){
@@ -29,7 +29,7 @@ public class WordSegmentation {
     public Map<String, Integer> segment(String msg) throws IOException {
         StringReader sr = new StringReader(msg);
         IKSegmenter ik = new IKSegmenter(sr, true);
-        Lexeme lex = null;
+        Lexeme lex;
         Map<String, Integer> map = new HashMap<>();
         while((lex = ik.next()) != null){
             String segmentedWord = lex.getLexemeText();
@@ -42,7 +42,7 @@ public class WordSegmentation {
     public List<String> segmentToWordList(String msg) throws IOException {
         StringReader sr = new StringReader(msg);
         IKSegmenter ik = new IKSegmenter(sr, true);
-        Lexeme lex = null;
+        Lexeme lex;
         List<String> wordList = new ArrayList<>();
         while ((lex = ik.next()) != null) {
             String segmentedWord = lex.getLexemeText();

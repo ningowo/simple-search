@@ -4,9 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.CSVFileReader;
-import team.snof.simplesearch.search.engine.index.DocParser;
-import team.snof.simplesearch.search.engine.index.IndexBuilder;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.engine.DocParser;
+import team.snof.simplesearch.search.model.dao.Doc;
 
 import java.util.List;
 
@@ -17,9 +16,6 @@ public class IndexGenerateService {
     @Autowired
     DocParser docParser;
 
-    @Autowired
-    IndexBuilder indexBuilder;
-
     public void generate(String path) {
         // 从csv文件获取Doc
         log.info("开始读取文件...");
@@ -27,31 +23,12 @@ public class IndexGenerateService {
         log.info("读取文件完成，文件数量：" + docList.size());
 
         // 解析文件和存储文件
-        log.info("开始解析文件...");
-        docParser.parse(docList);
-        log.info("解析完成！");
-
-        log.info("开始构建索引文件...");
-        indexBuilder.buildIndexes();
-        log.info("索引构建完成！");
-    }
-
-    public void parseAndStoreDocs(String path) {
-        // 从csv文件获取Doc
-        log.info("开始读取文件...");
-        List<Doc> docList = CSVFileReader.readFile(path);
-        log.info("读取文件完成，文件数量={}", docList.size());
-
-        // 解析文件和存储文件
-        log.info("开始解析文件...");
-        docParser.parse(docList);
-        log.info("解析完成！");
-    }
-
-    public void buildIndex() {
-        log.info("开始构建索引文件...");
-        indexBuilder.buildIndexes();
-        log.info("索引构建完成！");
+        log.info("开始解析文件并构建索引...");
+        long startTime = System.currentTimeMillis();
+        long parseDocNum = docParser.parseAndBuild(docList);
+        long endTime = System.currentTimeMillis();
+        long time = endTime - startTime;
+        log.info("解析完成！用时：{}ms {}s, 总文档数：{}", time, time / 1000, parseDocNum);
     }
 
 }

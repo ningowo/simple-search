@@ -1,35 +1,20 @@
 package team.snof.simplesearch.search.controller;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import team.snof.simplesearch.search.engine.Engine;
-import team.snof.simplesearch.search.service.IndexGenerateService;
-import team.snof.simplesearch.search.model.dao.engine.ComplexEngineResult;
-import team.snof.simplesearch.search.model.dao.index.Index;
 import team.snof.simplesearch.search.model.vo.ResultVO;
-import team.snof.simplesearch.search.storage.IndexStorage;
+import team.snof.simplesearch.search.storage.ForwardIndexStorage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 使用说明：
- * 1. 开启redis和mongodb
- * 2. 启动项目
- * 3. 下载数据集并放到指定位置
- *      3.1 放到"D:\\ByteDanceCamp\\test20.csv"，然后直接访问http://localhost:5900/search/test/index/generate?filePath=&defaultPath=true
- *      3.2 或者，放到随便什么位置，然后访问http://localhost:8080/search/test/index/generate?filePath=${随便什么位置}&defaultPath=false
- *      然后能看到console打印的"解析文件和存储文件、构建索引并存储"，即为成功
- * 4. 访问http://localhost:5900/search/test/eng，即可简单测试engine.find和engine.rangeFind这两个接口
- * 5. （可选）自定义测试方法，修改engineTest方法的参数和内容，自己在controller里传参进行测试
- */
 @Api("测试接口")
 @RestController()
 @RequestMapping("/search/test")
@@ -38,8 +23,29 @@ public class TestController {
     @Autowired
     Engine engine;
 
+    @Autowired
+    ForwardIndexStorage forwardIndexStorage;
+
+    @RequestMapping(value = "/forwardBatchFind", method = RequestMethod.GET)
+    public ResultVO<List> testMongo(List<String> docIds, boolean useDefault) {
+        List<String> ids = List.of("6941014511083630592", "6941014511192682496", "6941014511305928704");
+
+        ids = useDefault ? ids : docIds;
+
+       return ResultVO.newSuccessResult(forwardIndexStorage.batchFind(ids));
+    }
+
+    @RequestMapping(value = "/forwardFind", method = RequestMethod.GET)
+    public ResultVO testMongo1(String docId, boolean useDefault) {
+        String id = "6941014511305928704";
+
+        id = useDefault ? id : docId;
+
+        return ResultVO.newSuccessResult(forwardIndexStorage.find(id));
+    }
+
     @RequestMapping(value = "/eng", method = RequestMethod.GET)
-    public ResultVO<String> engineTest(@RequestParam String word) {
+    public ResultVO<String> engineTest() {
         System.out.println("+++++++++++");
 
         List<String> words = new ArrayList<>();
@@ -55,17 +61,16 @@ public class TestController {
         Map<String, Integer> wordToFreqMap1 = new HashMap<>();
         wordToFreqMap1.put("冰箱", 1);
         wordToFreqMap1.put("好玩", 1);
-        ComplexEngineResult result1 = engine.rangeFind(wordToFreqMap1, 0, 4);
-        System.out.println(result1.getDocs());
-        System.out.println(result1.getTotalDocIds());
-        System.out.println(result1.getRelatedSearch());
+        List<String> sortedDocIds = engine.findSortedDocIds(wordToFreqMap1);
+        System.out.println(sortedDocIds);
         System.out.println("+++++++++=============================");
 
         return ResultVO.newSuccessResult("OK");
     }
 
-    @RequestMapping(value = "/test1", method = RequestMethod.GET)
-    public ResultVO<String> test1() {
-        return ResultVO.newSuccessResult("OK");
+    @RequestMapping(value = "/test", method = RequestMethod.GET)
+    @ApiOperation("测试接口")
+    public ResultVO<String> test() {
+        return ResultVO.newSuccessResult("测试接口ok: ");
     }
 }

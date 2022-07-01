@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
-import team.snof.simplesearch.search.model.dao.doc.Doc;
+import team.snof.simplesearch.search.model.dao.Doc;
 
 import java.util.List;
 
@@ -17,17 +17,12 @@ public class DocStorage {
 
     public Doc getDocById(String id) {
         Query query = new Query(Criteria.where("_id").is(id));
-        List<Doc> docs = mongoTemplate.find(query, Doc.class, "doc_storage");
-        if (docs.isEmpty()) {
-            return null;
-        }
-
-        return docs.get(0);
+        return mongoTemplate.findOne(query, Doc.class, "doc_storage");
     }
 
     public String addDoc(Doc doc) {
         if (doc == null) {
-            return "";
+            return null;
         }
 
         Doc doc_storage = mongoTemplate.save(doc, "doc_storage");
