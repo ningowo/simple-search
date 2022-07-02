@@ -6,9 +6,11 @@ import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
 import team.snof.simplesearch.search.model.dao.Doc;
 import team.snof.simplesearch.search.model.dao.ForwardIndex;
+import team.snof.simplesearch.search.model.dao.InvertedIndex;
 import team.snof.simplesearch.search.model.dao.WordFreq;
 import team.snof.simplesearch.search.storage.DocStorage;
 import team.snof.simplesearch.search.storage.ForwardIndexStorage;
+import team.snof.simplesearch.search.storage.InvertedIndexStorage;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -27,6 +29,9 @@ public  class SortLogic {
 
     @Autowired
     ForwardIndexStorage forwardIndexStorage;
+
+    @Autowired
+    InvertedIndexStorage invertedIndexStorage;
 
     // BM25算法常量定义
     // k1可取1.2--2
@@ -149,23 +154,32 @@ public  class SortLogic {
             for (String docId : relatedSearchDocIds) {
                 String capation = docStorage.getDocById(docId).getCaption();
                 String relatedWord = calRelatedSearch(capation, keyWord_1, keyWord_2);
-                if (!relatedWord.isBlank() && (!relatedWord.equals(keyWord_1) && !relatedWord.equals(keyWord_1))) {
+                if (!relatedWord.isBlank() && (!relatedWord.equals(keyWord_1) && !relatedWord.equals(keyWord_2))) {
                     relatedSearch.add(relatedWord);
                 }
                 if (relatedSearch.size() == MAX_NUM_RELATED_SEARCH_TO_FIND) break;
             }
-
-            log.info("构建相关搜索完成! " + "相关搜索: " + relatedSearch);
-            return new ArrayList<>(relatedSearch);
-
         }
+        log.info("构建相关搜索完成! " + "相关搜索: " + relatedSearch);
+        return new ArrayList<>(relatedSearch);
     }
 
-    public BigDecimal calWordIDF(String word, Long docTotalNum) {
-
+    /**
+     * IDF算法计算单词权重
+     * @param word
+     * @param docTotalNum
+     * @return
+     */
+    public BigDecimal calWordIDF(String word, long docTotalNum) {
+        // 包含分词的文档数目
+        InvertedIndex invertedIndex = invertedIndexStorage.find(word);
+        if (invertedIndex == null) {
+            return new BigDecimal(0);
+        }
+        long wordDocNum = invertedIndex.getDocIds().size();
+        BigDecimal wordIDF = BigDecimal.valueOf(Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5)));
+        return wordIDF;
     }
-
-
 
     /**
      * 对单个分词计算相关搜索

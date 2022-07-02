@@ -7,7 +7,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.search.model.dao.Doc;
 
-import java.util.List;
 
 @Component
 public class DocStorage {
