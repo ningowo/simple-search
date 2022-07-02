@@ -26,11 +26,6 @@ public  class SortLogic {
     // k3可取1.2~2
     private static final double BM25_K3 = 1.5;
 
-    // 最多需要获取的相关搜索条数
-    private static final int MAX_NUM_RELATED_SEARCH_TO_FIND = 8;
-
-    // 最多进行相关搜索检索的文档
-    private static final int MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH = 6;
 
     /**
      * 计算单个分词对应的所有doc，与这个分词的关联度
@@ -100,6 +95,7 @@ public  class SortLogic {
 
     /**
      * 对单个分词计算相关搜索
+     * 这里是对一个文档 计算keyWord的相关搜索的逻辑
      */
     public String calRelatedSearch(String caption, String keyWord) {
         // 对文档分词

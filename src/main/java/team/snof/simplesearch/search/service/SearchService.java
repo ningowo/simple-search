@@ -27,6 +27,9 @@ public class SearchService {
     // 默认缓存过期时间，单位：秒
     private static final Integer DEFAULT_CACHE_EXPIRE_TIME = 60 * 10;
 
+    // 最多进行相关搜索检索的文档
+    private static final int MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH = 10;
+
     @Autowired
     Engine engine;
 
@@ -57,6 +60,7 @@ public class SearchService {
         // 分词
         log.info("开始分词：");
         HashMap<String, Integer> wordToFreqMap = wordSegmentation.segment(query, filterWordList);
+        // 上一句调用分词器的时候  已经把过滤词过滤掉了 下面过滤步骤可省略
         // 如果query中有过滤词，在这一步直接过滤掉
         for (String word : wordToFreqMap.keySet()) {
             if (filterWordList.contains(word)) {
@@ -78,7 +82,14 @@ public class SearchService {
         log.info("docId过滤完成：" + sortedDocIds.size());
 
         // 获取相关搜索
-        List<String> relatedSearch = null;
+        // 还是需要传入文档
+        List<String> relatedSearchDocIds = new ArrayList<>();
+        if (totalDocNum <= MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH) {
+            relatedSearchDocIds = sortedDocIds;
+        } else {
+            relatedSearchDocIds = sortedDocIds.subList(0, MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH + 1);
+        }
+        List<String> relatedSearch = engine.findRelatedSearch(relatedSearchDocIds ,wordToFreqMap);
 
         // 设置总文档数为过滤完毕的文档数
         request.setTotal((long) totalDocNum);

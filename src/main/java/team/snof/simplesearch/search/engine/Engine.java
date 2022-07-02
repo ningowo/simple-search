@@ -16,7 +16,7 @@ public interface Engine {
     List<String> findSortedDocIds(Map<String, Integer> wordToFreqMap);
 
     // 相关搜索
-    List<String> findRelatedSearch(Map<String, Integer> wordToFreqMap);
+    List<String> findRelatedSearch(List<String> relatedSearchDocIds, Map<String, Integer> wordToFreqMap);
 
     // 倒排索引查询
     List<InvertedIndex> findInvertedIndexList(List<String> wordList);
