@@ -38,8 +38,7 @@ public class EngineImpl implements Engine {
     //倒排索引缓存时间(min)
     private final int expireDuration = 10;
 
-    // 最多需要获取的相关搜索条数
-    private static final int MAX_NUM_RELATED_SEARCH_TO_FIND = 8;
+
 
     /**
      * 根据query查找索引并排序文档
@@ -88,18 +87,7 @@ public class EngineImpl implements Engine {
      * 获取相关搜索结果
      */
     public List<String> findRelatedSearch(List<String> relatedSearchDocIds, Map<String, Integer> wordToFreqMap) {
-        List<String> relatedSearchList = new ArrayList<>();
-        // 若只包含一个分词
-        if (wordToFreqMap.size() == 1) {
-            String keyWord = wordToFreqMap.keySet().iterator().next();
-            for (String docId : relatedSearchDocIds) {
-                String capation = docStorage.getDocById(docId).getCaption();
-                relatedSearchList.add(sortLogic.calRelatedSearch(capation, keyWord));
-                if (relatedSearchList.size() == MAX_NUM_RELATED_SEARCH_TO_FIND) break;
-            }
-        } else if (wordToFreqMap.size() == 2){  // 只包含两个分词
-
-        }
+        return sortLogic.getRelatedSearch(relatedSearchDocIds, wordToFreqMap);
     }
 
     /**

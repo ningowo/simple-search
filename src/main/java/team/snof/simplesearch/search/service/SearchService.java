@@ -84,11 +84,8 @@ public class SearchService {
         // 获取相关搜索
         // 还是需要传入文档
         List<String> relatedSearchDocIds = new ArrayList<>();
-        if (totalDocNum <= MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH) {
-            relatedSearchDocIds = sortedDocIds;
-        } else {
-            relatedSearchDocIds = sortedDocIds.subList(0, MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH + 1);
-        }
+        int relatedSearchDocNum = Math.min(totalDocNum, MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH);
+        relatedSearchDocIds = sortedDocIds.subList(0, relatedSearchDocNum);
         List<String> relatedSearch = engine.findRelatedSearch(relatedSearchDocIds ,wordToFreqMap);
 
         // 设置总文档数为过滤完毕的文档数
