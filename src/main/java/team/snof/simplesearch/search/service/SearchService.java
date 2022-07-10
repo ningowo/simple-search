@@ -81,13 +81,6 @@ public class SearchService {
         }
         log.info("docId过滤完成：" + sortedDocIds.size());
 
-        // 获取相关搜索
-        // 还是需要传入文档
-        List<String> relatedSearchDocIds = new ArrayList<>();
-        int relatedSearchDocNum = Math.min(totalDocNum, MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH);
-        relatedSearchDocIds = sortedDocIds.subList(0, relatedSearchDocNum);
-        List<String> relatedSearch = engine.findRelatedSearch(relatedSearchDocIds ,wordToFreqMap);
-
         // 设置总文档数为过滤完毕的文档数
         request.setTotal((long) totalDocNum);
 
@@ -104,6 +97,25 @@ public class SearchService {
         List<Doc> docs = engine.batchFindDocs(pageDocIds);
         log.info("文档查询完成：" + docs);
 
+        log.info("开始获取相关搜索:");
+        // 获取相关搜索
+        List<String> relatedSearch = new ArrayList<>();
+        // 1. 如果是第一页 直接传入上面查询得到的文档获取相关搜索 避免引擎层再查询文档数据库
+        if (pageNum == 1) {
+            int relatedSearchDocNum = Math.min(docs.size(), MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH);
+            List<Doc> relatedSearchDocs = new ArrayList<>();
+            relatedSearchDocs = docs.subList(0, relatedSearchDocNum);
+            relatedSearch = engine.findRelatedSearchByDoc(relatedSearchDocs ,wordToFreqMap);
+        } else {
+            // 2. 不是第一页 首先去缓存查找  如果缓存没有则传入docId进行计算
+            // TODO 缓存查询
+
+            // 若缓存不存在 则传入docId计算相关搜索
+            int relatedSearchDocIdNum = Math.min(totalDocNum, MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH);
+            List<String> relatedSearchDocIds = new ArrayList<>();
+            relatedSearchDocIds = sortedDocIds.subList(0, relatedSearchDocIdNum);
+            relatedSearch = engine.findRelatedSearchById(relatedSearchDocIds ,wordToFreqMap);
+        }
         return convertAndBuildResponse(docs, relatedSearch, request);
     }
 

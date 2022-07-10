@@ -84,10 +84,17 @@ public class EngineImpl implements Engine {
     }
 
     /**
-     * 获取相关搜索结果
+     * 获取相关搜索结果  根据DocId
      */
-    public List<String> findRelatedSearch(List<String> relatedSearchDocIds, Map<String, Integer> wordToFreqMap) {
-        return sortLogic.getRelatedSearch(relatedSearchDocIds, wordToFreqMap);
+    public List<String> findRelatedSearchById(List<String> relatedSearchDocIds, Map<String, Integer> wordToFreqMap) {
+        return sortLogic.getRelatedSearchById(relatedSearchDocIds, wordToFreqMap);
+    }
+
+    /**
+     * 获取相关搜索结果  根据Doc
+     */
+    public List<String> findRelatedSearchByDoc(List<Doc> relatedSearchDocs, Map<String, Integer> wordToFreqMap) {
+        return sortLogic.getRelatedSearchByDoc(relatedSearchDocs, wordToFreqMap);
     }
 
     /**
