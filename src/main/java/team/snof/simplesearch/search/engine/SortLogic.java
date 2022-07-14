@@ -4,10 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import team.snof.simplesearch.common.util.WordSegmentation;
+import team.snof.simplesearch.search.model.dao.Doc;
 import team.snof.simplesearch.search.model.dao.ForwardIndex;
+import team.snof.simplesearch.search.model.dao.InvertedIndex;
 import team.snof.simplesearch.search.model.dao.WordFreq;
+import team.snof.simplesearch.search.storage.DocStorage;
+import team.snof.simplesearch.search.storage.ForwardIndexStorage;
+import team.snof.simplesearch.search.storage.InvertedIndexStorage;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,6 +23,15 @@ public  class SortLogic {
 
     @Autowired
     WordSegmentation wordSegmentation;
+
+    @Autowired
+    DocStorage docStorage;
+
+    @Autowired
+    ForwardIndexStorage forwardIndexStorage;
+
+    @Autowired
+    InvertedIndexStorage invertedIndexStorage;
 
     // BM25算法常量定义
     // k1可取1.2--2
@@ -29,8 +44,6 @@ public  class SortLogic {
     // 最多需要获取的相关搜索条数
     private static final int MAX_NUM_RELATED_SEARCH_TO_FIND = 8;
 
-    // 最多进行相关搜索检索的文档
-    private static final int MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH = 6;
 
     /**
      * 计算单个分词对应的所有doc，与这个分词的关联度
@@ -98,8 +111,132 @@ public  class SortLogic {
                 .collect(Collectors.toList());
     }
 
+    // 计算相关搜索  根据DocId
+    public List<String> getRelatedSearchById(List<String> relatedSearchDocIds, Map<String, Integer> wordToFreqMap) {
+        Set<String> relatedSearch = new HashSet<>();
+        List<String> wordsToFindRelatedSearch = new ArrayList<>(wordToFreqMap.keySet());
+        // 若只包含一个分词
+        if (wordsToFindRelatedSearch.size() == 1) {
+            String keyWord = wordsToFindRelatedSearch.get(0);
+            for (String docId : relatedSearchDocIds) {
+                String capation = docStorage.getDocById(docId).getCaption();
+                String relatedWord = calRelatedSearch(capation, keyWord);
+                if (!relatedWord.isBlank() && !relatedWord.equals(keyWord)) {
+                    relatedSearch.add(relatedWord);
+                }
+                if (relatedSearch.size() == MAX_NUM_RELATED_SEARCH_TO_FIND) break;
+            }
+        } else {
+            String keyWord_1 = "";
+            String keyWord_2 = "";
+
+            if (wordsToFindRelatedSearch.size() == 2) {  // 只包含两个分词
+                keyWord_1 = wordsToFindRelatedSearch.get(0);
+                keyWord_2 = wordsToFindRelatedSearch.get(1);
+            } else {
+                // 分词数量大于2：计算所有分词idf权重，选择最大的两个作为关键词
+                HashMap<String, BigDecimal> wordToIDFMap = new HashMap<>();
+
+                // 计算idf权重
+                long docTotalNum = forwardIndexStorage.getTotalDocNum();
+                for (String word : wordsToFindRelatedSearch) {
+                    BigDecimal wordIDF = calWordIDF(word, docTotalNum);
+                    wordToIDFMap.put(word, wordIDF);
+                }
+
+                // 选择idf权重最大的两个分词
+                List<Map.Entry<String, BigDecimal>> wordToIDFList = new ArrayList<>(wordToIDFMap.entrySet());
+                wordToIDFList.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+                keyWord_1 = wordToIDFList.get(0).getKey();
+                keyWord_2 = wordToIDFList.get(1).getKey();
+            }
+
+            for (String docId : relatedSearchDocIds) {
+                String capation = docStorage.getDocById(docId).getCaption();
+                String relatedWord = calRelatedSearch(capation, keyWord_1, keyWord_2);
+                if (!relatedWord.isBlank() && (!relatedWord.equals(keyWord_1) && !relatedWord.equals(keyWord_2))) {
+                    relatedSearch.add(relatedWord);
+                }
+                if (relatedSearch.size() == MAX_NUM_RELATED_SEARCH_TO_FIND) break;
+            }
+        }
+        log.info("构建相关搜索完成! " + "相关搜索: " + relatedSearch);
+        return new ArrayList<>(relatedSearch);
+    }
+
+    // 计算相关搜索  根据Doc
+    public List<String> getRelatedSearchByDoc(List<Doc> relatedSearchDocs, Map<String, Integer> wordToFreqMap) {
+        Set<String> relatedSearch = new HashSet<>();
+        List<String> wordsToFindRelatedSearch = new ArrayList<>(wordToFreqMap.keySet());
+        // 若只包含一个分词
+        if (wordsToFindRelatedSearch.size() == 1) {
+            String keyWord = wordsToFindRelatedSearch.get(0);
+            for (Doc doc : relatedSearchDocs) {
+                String capation = doc.getCaption();
+                String relatedWord = calRelatedSearch(capation, keyWord);
+                if (!relatedWord.isBlank() && !relatedWord.equals(keyWord)) {
+                    relatedSearch.add(relatedWord);
+                }
+                if (relatedSearch.size() == MAX_NUM_RELATED_SEARCH_TO_FIND) break;
+            }
+        } else { // 计算获取两个关键词
+            String keyWord_1 = "";
+            String keyWord_2 = "";
+
+            if (wordsToFindRelatedSearch.size() == 2) {  // 只包含两个分词
+                keyWord_1 = wordsToFindRelatedSearch.get(0);
+                keyWord_2 = wordsToFindRelatedSearch.get(1);
+            } else {
+                // 分词数量大于2：计算所有分词idf权重，选择最大的两个作为关键词
+                HashMap<String, BigDecimal> wordToIDFMap = new HashMap<>();
+
+                // 计算idf权重
+                long docTotalNum = forwardIndexStorage.getTotalDocNum();
+                for (String word : wordsToFindRelatedSearch) {
+                    BigDecimal wordIDF = calWordIDF(word, docTotalNum);
+                    wordToIDFMap.put(word, wordIDF);
+                }
+
+                // 选择idf权重最大的两个分词
+                List<Map.Entry<String, BigDecimal>> wordToIDFList = new ArrayList<>(wordToIDFMap.entrySet());
+                wordToIDFList.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+                keyWord_1 = wordToIDFList.get(0).getKey();
+                keyWord_2 = wordToIDFList.get(1).getKey();
+            }
+
+            for (Doc doc : relatedSearchDocs) {
+                String capation = doc.getCaption();
+                String relatedWord = calRelatedSearch(capation, keyWord_1, keyWord_2);
+                if (!relatedWord.isBlank() && (!relatedWord.equals(keyWord_1) && !relatedWord.equals(keyWord_2))) {
+                    relatedSearch.add(relatedWord);
+                }
+                if (relatedSearch.size() == MAX_NUM_RELATED_SEARCH_TO_FIND) break;
+            }
+        }
+        log.info("构建相关搜索完成! " + "相关搜索: " + relatedSearch);
+        return new ArrayList<>(relatedSearch);
+    }
+
+    /**
+     * IDF算法计算单词权重
+     * @param word
+     * @param docTotalNum
+     * @return
+     */
+    public BigDecimal calWordIDF(String word, long docTotalNum) {
+        // 包含分词的文档数目
+        InvertedIndex invertedIndex = invertedIndexStorage.find(word);
+        if (invertedIndex == null) {
+            return new BigDecimal(0);
+        }
+        long wordDocNum = invertedIndex.getDocIds().size();
+        BigDecimal wordIDF = BigDecimal.valueOf(Math.log((docTotalNum - wordDocNum + 0.5) / (wordDocNum + 0.5)));
+        return wordIDF;
+    }
+
     /**
      * 对单个分词计算相关搜索
+     * 这里是对一个文档 计算keyWord的相关搜索的逻辑
      */
     public String calRelatedSearch(String caption, String keyWord) {
         // 对文档分词
