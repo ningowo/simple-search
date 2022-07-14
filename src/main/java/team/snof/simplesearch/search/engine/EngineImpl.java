@@ -38,8 +38,6 @@ public class EngineImpl implements Engine {
     //倒排索引缓存时间(min)
     private final int expireDuration = 10;
 
-
-
     /**
      * 根据query查找索引并排序文档
      */
@@ -84,17 +82,10 @@ public class EngineImpl implements Engine {
     }
 
     /**
-     * 获取相关搜索结果  根据DocId
+     * 获取相关搜索结果
      */
-    public List<String> findRelatedSearchById(List<String> relatedSearchDocIds, Map<String, Integer> wordToFreqMap) {
-        return sortLogic.getRelatedSearchById(relatedSearchDocIds, wordToFreqMap);
-    }
-
-    /**
-     * 获取相关搜索结果  根据Doc
-     */
-    public List<String> findRelatedSearchByDoc(List<Doc> relatedSearchDocs, Map<String, Integer> wordToFreqMap) {
-        return sortLogic.getRelatedSearchByDoc(relatedSearchDocs, wordToFreqMap);
+    public List<String> findRelatedSearch(Map<String, Integer> wordToFreqMap) {
+        return null;
     }
 
     /**

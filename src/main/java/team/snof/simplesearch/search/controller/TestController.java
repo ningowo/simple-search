@@ -2,19 +2,14 @@ package team.snof.simplesearch.search.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import team.snof.simplesearch.search.engine.Engine;
 import team.snof.simplesearch.search.model.vo.ResultVO;
-import team.snof.simplesearch.search.model.vo.SearchRequestVO;
-import team.snof.simplesearch.search.model.vo.SearchResponseVO;
-import team.snof.simplesearch.search.service.SearchService;
 import team.snof.simplesearch.search.storage.ForwardIndexStorage;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,14 +18,10 @@ import java.util.Map;
 @Api("测试接口")
 @RestController()
 @RequestMapping("/search/test")
-@Slf4j
 public class TestController {
 
     @Autowired
     Engine engine;
-
-    @Autowired
-    SearchService searchService;
 
     @Autowired
     ForwardIndexStorage forwardIndexStorage;
@@ -52,8 +43,9 @@ public class TestController {
 
         return ResultVO.newSuccessResult(forwardIndexStorage.find(id));
     }
+
     @RequestMapping(value = "/eng", method = RequestMethod.GET)
-    public ResultVO<String> engineTest() throws IOException {
+    public ResultVO<String> engineTest() {
         System.out.println("+++++++++++");
 
         List<String> words = new ArrayList<>();
@@ -72,10 +64,6 @@ public class TestController {
         List<String> sortedDocIds = engine.findSortedDocIds(wordToFreqMap1);
         System.out.println(sortedDocIds);
         System.out.println("+++++++++=============================");
-        List<String> filterList = new ArrayList<>();
-        SearchRequestVO request = new SearchRequestVO("深圳", filterList);
-        SearchResponseVO searchResponseVO = searchService.search(request);
-        System.out.println("相关搜索：" + searchResponseVO.getRelatedSearchList());
 
         return ResultVO.newSuccessResult("OK");
     }
