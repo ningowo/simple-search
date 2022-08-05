@@ -8,6 +8,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
+/**
+ *  现在用于2核4G的机器
+ */
 
 @EnableAsync
 @Configuration
@@ -18,7 +21,7 @@ public class ThreadPoolConfig {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         //设置线程池参数信息
         taskExecutor.setCorePoolSize(0);
-        taskExecutor.setMaxPoolSize(6);
+        taskExecutor.setMaxPoolSize(2);
         taskExecutor.setQueueCapacity(0);
         taskExecutor.setKeepAliveSeconds(60);
         taskExecutor.setThreadNamePrefix("myExecutor--");
@@ -31,19 +34,19 @@ public class ThreadPoolConfig {
         return taskExecutor;
     }
 
-    @Bean("indexBuilderExecutor")
-    public Executor indexBuilderExecutor() {
+    @Bean("searchExecutor")
+    public ThreadPoolTaskExecutor searchExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         //设置线程池参数信息
-        taskExecutor.setCorePoolSize(0);
-        taskExecutor.setMaxPoolSize(8);
-        taskExecutor.setQueueCapacity(0);
+        taskExecutor.setCorePoolSize(2);
+        taskExecutor.setMaxPoolSize(2);
+        taskExecutor.setQueueCapacity(100);
         taskExecutor.setKeepAliveSeconds(60);
         taskExecutor.setThreadNamePrefix("myExecutor--");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         taskExecutor.setAwaitTerminationSeconds(60);
         //修改拒绝策略为使用当前线程执行
-        taskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        taskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
         //初始化线程池
         taskExecutor.initialize();
         return taskExecutor;

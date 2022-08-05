@@ -14,6 +14,7 @@ import team.snof.simplesearch.search.service.SearchService;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @Api("搜索接口")
@@ -37,14 +38,15 @@ public class SearchController {
             searchResult = searchService.search(request);
         } catch (IllegalArgumentException e) {
             return ResultVO.newFailedResult(e.getMessage());
-        } catch (IOException e) {
+        } catch (IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
 
         assert searchResult != null;
-        log.info("查询完毕：" + request +
-                "，结果长度为：" + searchResult.getDocVOList().size() +
-                "，相关搜索为: " + searchResult.getRelatedSearchList());
+        log.info("查询完毕：{}, 结果长度为：{}，相关搜索长度为: {}",
+                request,
+                searchResult.getDocVOList() == null ? "0" : searchResult.getDocVOList().size(),
+                searchResult.getRelatedSearchList() == null ? "0" : searchResult.getRelatedSearchList().size());
 
         return ResultVO.newSuccessResult(searchResult);
     }

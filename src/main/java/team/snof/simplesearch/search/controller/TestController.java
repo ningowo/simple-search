@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @Api("测试接口")
 @RestController()
@@ -55,27 +56,27 @@ public class TestController {
     @RequestMapping(value = "/eng", method = RequestMethod.GET)
     public ResultVO<String> engineTest() throws IOException {
         System.out.println("+++++++++++");
-
-        List<String> words = new ArrayList<>();
-        words.add("冰箱");
-
-        List<Long> docIds = new ArrayList<>();
-        docIds.add(6932693475694469120L);
-        docIds.add(6932695833488785408L);
-        docIds.add(6932695902157930496L);
-
-        System.out.println("=============================");
-
-        Map<String, Integer> wordToFreqMap1 = new HashMap<>();
-        wordToFreqMap1.put("冰箱", 1);
-        wordToFreqMap1.put("好玩", 1);
-        List<String> sortedDocIds = engine.findSortedDocIds(wordToFreqMap1);
-        System.out.println(sortedDocIds);
-        System.out.println("+++++++++=============================");
-        List<String> filterList = new ArrayList<>();
-        SearchRequestVO request = new SearchRequestVO("深圳", filterList);
-        SearchResponseVO searchResponseVO = searchService.search(request);
-        System.out.println("相关搜索：" + searchResponseVO.getRelatedSearchList());
+//
+//        List<String> words = new ArrayList<>();
+//        words.add("冰箱");
+//
+//        List<Long> docIds = new ArrayList<>();
+//        docIds.add(6932693475694469120L);
+//        docIds.add(6932695833488785408L);
+//        docIds.add(6932695902157930496L);
+//
+//        System.out.println("=============================");
+//
+//        Map<String, Integer> wordToFreqMap1 = new HashMap<>();
+//        wordToFreqMap1.put("冰箱", 1);
+//        wordToFreqMap1.put("好玩", 1);
+//        List<String> sortedDocIds = engine.findSortedDocIds(wordToFreqMap1);
+//        System.out.println(sortedDocIds);
+//        System.out.println("+++++++++=============================");
+//        List<String> filterList = new ArrayList<>();
+//        SearchRequestVO request = new SearchRequestVO("深圳", filterList);
+//        SearchResponseVO searchResponseVO = searchService.search(request);
+//        System.out.println("相关搜索：" + searchResponseVO.getRelatedSearchList());
 
         return ResultVO.newSuccessResult("OK");
     }
