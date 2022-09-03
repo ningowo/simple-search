@@ -40,13 +40,13 @@ public class ThreadPoolConfig {
         //设置线程池参数信息
         taskExecutor.setCorePoolSize(2);
         taskExecutor.setMaxPoolSize(2);
-        taskExecutor.setQueueCapacity(100);
+        taskExecutor.setQueueCapacity(20);
         taskExecutor.setKeepAliveSeconds(60);
         taskExecutor.setThreadNamePrefix("myExecutor--");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         taskExecutor.setAwaitTerminationSeconds(60);
         //修改拒绝策略为使用当前线程执行
-        taskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
+        taskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
         //初始化线程池
         taskExecutor.initialize();
         return taskExecutor;

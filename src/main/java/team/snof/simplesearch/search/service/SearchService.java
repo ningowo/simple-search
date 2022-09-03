@@ -10,6 +10,7 @@ import team.snof.simplesearch.search.adaptor.SearchAdaptor;
 import team.snof.simplesearch.search.engine.Engine;
 import team.snof.simplesearch.search.model.dao.Doc;
 import team.snof.simplesearch.search.model.dao.InvertedIndex;
+import team.snof.simplesearch.search.model.dao.DocIdsAndSize;
 import team.snof.simplesearch.search.model.vo.DocVO;
 import team.snof.simplesearch.search.model.vo.SearchRequestVO;
 import team.snof.simplesearch.search.model.vo.SearchResponseVO;
@@ -82,17 +83,23 @@ public class SearchService {
 
         // 如果缓存中不存在，重新获取排序
         String queryRedisKey = String.format(queryRedisFormat, query);
-        List<String> sortedDocIds;
-        if (redisUtils.lGetListSize(queryRedisKey) == 0) {
+        List<String> sortedDocIds = null;
+        int docNum;
+        if (redisUtils.get(queryRedisKey) == null) {
             sortedDocIds = engine.findSortedDocIds(wordToFreqMap);
+            docNum = sortedDocIds.size();
             if (sortedDocIds.size() > 0) {
                 int toIndex = Math.min(sortedDocIds.size(), 40);
-                redisUtils.lSetAll(queryRedisKey, sortedDocIds.subList(0, toIndex), expireDuration); // 最多存放40个文档id
+                DocIdsAndSize docIdsAndSize = new DocIdsAndSize(new ArrayList<>(sortedDocIds.subList(0, toIndex)), sortedDocIds.size());
+                redisUtils.set(queryRedisKey, docIdsAndSize, expireDuration); // 最多存放40个文档id
             }
         } else if ((start < 40 && end > 40) || start > 40){
             sortedDocIds = engine.findSortedDocIds(wordToFreqMap);
+            docNum = sortedDocIds.size();
         } else {
-            sortedDocIds = redisUtils.lGet (queryRedisKey, 0, 40);
+            DocIdsAndSize docIdsAndSize = (DocIdsAndSize) redisUtils.get(queryRedisKey);
+            sortedDocIds = docIdsAndSize.getSortedDocIds();
+            docNum = docIdsAndSize.getTotal();
         }
 
         if (sortedDocIds == null || sortedDocIds.isEmpty()) {
@@ -103,20 +110,19 @@ public class SearchService {
 
         // 过滤
         sortedDocIds = filterDocIdsByIds(sortedDocIds, filterWordList);
-        int totalDocNum = sortedDocIds.size();
-        if (totalDocNum == 0) {
+        if (sortedDocIds.size() == 0) {
             return SearchAdaptor.getEmptyResponseVO(request);
         }
         log.info("docId过滤完成：" + sortedDocIds.size());
 
         // 设置总文档数为过滤完毕的文档数
-        request.setTotal((long) totalDocNum);
+        request.setTotal((long) docNum);
 
         // 分页
-        if (start >= totalDocNum) {
+        if (start >= docNum) {
             throw new IllegalArgumentException("所查询的记录超出范围!");
         }
-        end = (int) Math.min((long) pageNum * pageSize, totalDocNum);
+        end = (int) Math.min((long) pageNum * pageSize, docNum);
         List<String> pageDocIds = sortedDocIds.subList(start, end);
         log.info("分页完成：" + pageDocIds.size());
 
@@ -136,7 +142,7 @@ public class SearchService {
         } else {
             // 2. 不是第一页 首先去缓存查找  如果缓存没有则传入docId进行计算
             // 若缓存不存在 则传入docId计算相关搜索
-            int relatedSearchDocIdNum = Math.min(totalDocNum, MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH);
+            int relatedSearchDocIdNum = Math.min(docNum, MAX_DOC_NUM_TO_PARSE_RELATED_SEARCH);
             List<String> relatedSearchDocIds = new ArrayList<>();
             relatedSearchDocIds = sortedDocIds.subList(0, relatedSearchDocIdNum);
             relatedSearch = engine.findRelatedSearchById(relatedSearchDocIds ,wordToFreqMap);

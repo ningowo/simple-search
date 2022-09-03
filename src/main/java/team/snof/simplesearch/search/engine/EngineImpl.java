@@ -59,10 +59,10 @@ public class EngineImpl implements Engine {
             log.info("[findSortedDocIds] docid召回完成。分词：{} docId数量：{}", invertedIndex.getWord(), invertedIndex.getDocIds().size());
 
             // 暂时只保留最新的500个文档
-            int size = docIdList.size();
-            if (size > 500) {
-                docIdList = docIdList.subList(size - 500, size);
-            }
+//            int size = docIdList.size();
+//            if (size > 500) {
+//                docIdList = docIdList.subList(size - 500, size);
+//            }
 
             // 3. 获取正排索引（docId对应的文档具体信息，用于计算关联度）
             List<ForwardIndex> forwardIndices = forwardIndexStorage.batchFind(docIdList);
