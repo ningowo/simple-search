@@ -27,9 +27,6 @@ public class EngineImpl implements Engine {
     DocStorage docStorage;
 
     @Autowired
-    RedisTemplate redisTemplate;
-
-    @Autowired
     SortLogic sortLogic;
 
     /**

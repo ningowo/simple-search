@@ -91,22 +91,13 @@ public  class SortLogic {
                 String docId = docCorr.getKey();
                 double curCorr = docCorr.getValue();
 
-                Double oldCorr = allDocCorrMap.putIfAbsent(docId, curCorr);
-                if (oldCorr != null) {
-                    allDocCorrMap.put(docId, oldCorr + curCorr);
-                }
+                allDocCorrMap.put(docId, allDocCorrMap.getOrDefault(docId, (double) 0) + curCorr);
             }
         }
 
         // 从大到小排序
         return allDocCorrMap.entrySet().stream()
-                .sorted((o1, o2) -> {
-                    if (o1.getValue() - o2.getValue() > 0.00001) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                })
+                .sorted((o1, o2) -> (o2.getValue() - o1.getValue() > 0.0001) ? 1 : -1)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
